@@ -218,7 +218,7 @@
 
             const handleAI = async () => {
                 if (!GEMINI_API_KEY) {
-                    onApiError();
+                    onApiError("Missing API Key");
                     alert("Developer Error: You must paste your Gemini API Key into index.html before using the AI features.");
                     return;
                 }
@@ -238,19 +238,50 @@
                     parts.push({ inlineData: { mimeType: "image/jpeg", data: fileBase64 } });
                 }
 
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: parts }] })
-                    });
-                    
-                    const data = await res.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error.message || "API Key Invalid or Usage Limit Reached.");
-                    }
+                const modelsToTry = [
+                    'gemini-2.5-flash',
+                    'gemini-2.5-flash-preview-09-2025',
+                    'gemini-2.0-flash',
+                    'gemini-1.5-flash'
+                ];
 
+                let data = null;
+                let lastError = null;
+
+                for (const model of modelsToTry) {
+                    try {
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: parts }] })
+                        });
+                        
+                        const result = await res.json();
+                        
+                        if (result.error) {
+                            lastError = result.error.message;
+                            if (result.error.code === 404 || result.error.message.includes("is not found")) {
+                                continue; 
+                            }
+                            break; 
+                        }
+
+                        data = result;
+                        break; 
+                    } catch (e) {
+                        lastError = e.message;
+                    }
+                }
+
+                if (!data || data.error) {
+                    const finalError = data?.error?.message || lastError || "API Key Invalid or Models Unavailable.";
+                    onApiError(finalError);
+                    alert("AI Sync Error: " + finalError);
+                    setLoading(false);
+                    return;
+                }
+
+                try {
                     const clean = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
                     const parsed = JSON.parse(clean);
                     let flat = [];
@@ -262,7 +293,7 @@
                     setExtracted(flat);
                     onApiSuccess();
                 } catch (e) { 
-                    onApiError();
+                    onApiError(e.message || "Unknown Error");
                     alert("AI Sync Error: " + e.message); 
                 }
                 setLoading(false);
@@ -381,7 +412,7 @@
         function App() {
             const [view, setView] = useState('home');
             const [user, setUser] = useState(null);
-            const [apiStatus, setApiStatus] = useState(GEMINI_API_KEY ? 'active' : 'error');
+            const [apiStatus, setApiStatus] = useState(GEMINI_API_KEY ? 'active' : 'Missing API Key');
             const [lastUpdated, setLastUpdated] = useState('');
             const [stats, setStats] = useState([]);
             const [schedules, setSchedules] = useState([]);
@@ -455,7 +486,7 @@
                                 <div className="leading-none">
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-3xl font-black italic uppercase tracking-tighter block">SportzWire</span>
-                                        <div title={apiStatus === 'active' ? "AI API Active" : "AI API Missing or Error"} className={`w-3 h-3 rounded-full ${apiStatus === 'active' ? 'bg-green-400 shadow-[0_0_8px_#4ade80]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`}></div>
+                                        <div title={apiStatus === 'active' ? "AI API Active" : `AI API Error: ${apiStatus}`} className={`w-3 h-3 rounded-full ${apiStatus === 'active' ? 'bg-green-400 shadow-[0_0_8px_#4ade80]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`}></div>
                                         {lastUpdated && <span className="text-[9px] text-blue-300 font-bold uppercase tracking-widest bg-blue-800 px-2 py-0.5 rounded-full ml-1 whitespace-nowrap hidden sm:inline-block">Upd: {lastUpdated}</span>}
                                     </div>
                                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] ml-0.5">District 2 Hub</span>
@@ -481,7 +512,7 @@
                     <main className="flex-grow bg-gray-50">
                         {view === 'home' && <SchoolLookupView stats={stats} schedules={schedules} />}
                         {view === 'top20' && <Top20View stats={stats} />}
-                        {view === 'import' && <SmartImportView userSchool={school} onBatch={handleBatch} onApiSuccess={() => setApiStatus('active')} onApiError={() => setApiStatus('error')} />}
+                        {view === 'import' && <SmartImportView userSchool={school} onBatch={handleBatch} onApiSuccess={() => setApiStatus('active')} onApiError={(msg) => setApiStatus(msg)} />}
                         {view === 'staff' && <PortalView stats={stats} schedules={schedules} adAccounts={adAccounts} role={role} userSchool={school} onSave={handleSave} onDelete={handleDelete} />}
                     </main>
 
