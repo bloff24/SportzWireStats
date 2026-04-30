@@ -225,7 +225,7 @@
 
                 setLoading(true);
                 const cats = SPORTS_CATEGORIES[sport].join(', ');
-                const prompt = `Extract player names and their stats for ${sport} from this data. Map them to these exact categories: ${cats}. Return ONLY a JSON array of objects with playerName and stats object. Example: [{"playerName": "Smith", "stats": {"Points": 15}}]`;
+                const prompt = `Extract player names and their stats for ${sport} from this data. Map them to these exact categories: ${cats}. Return ONLY a valid JSON array of objects with playerName and stats object. Example: [{"playerName": "Smith", "stats": {"Points": 15}}]. DO NOT output any other text, markdown, or conversational phrases. Start your response with [ and end with ].`;
                 
                 const parts = [];
                 if (text) {
@@ -282,8 +282,17 @@
                 }
 
                 try {
-                    const clean = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
-                    const parsed = JSON.parse(clean);
+                    const textResponse = data.candidates[0].content.parts[0].text;
+                    const startIndex = textResponse.indexOf('[');
+                    const endIndex = textResponse.lastIndexOf(']');
+                    
+                    if (startIndex === -1 || endIndex === -1) {
+                        throw new Error("Could not find valid data array in the AI response.");
+                    }
+                    
+                    const cleanJson = textResponse.substring(startIndex, endIndex + 1);
+                    const parsed = JSON.parse(cleanJson);
+                    
                     let flat = [];
                     parsed.forEach(p => {
                         Object.entries(p.stats).forEach(([k, v]) => {
