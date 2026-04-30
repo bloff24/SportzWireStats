@@ -61,7 +61,7 @@
 
         const SEASONS = ["2025-2026", "2024-2025", "2023-2024", "All-Time"];
 
-        const GEMINI_API_KEY = "AIzaSyCjhv4xxzzWd29bB0UFWfjittJksCUJg40";
+        const GEMINI_API_KEY = "AIzaSyCv4pu_oLHrSwZRWcr71BauVyUA9DPjsak";
 
         const Icon = ({ name, className = "" }) => <i className={`fa-solid fa-${name} ${className}`}></i>;
 
@@ -239,7 +239,7 @@
                 }
 
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: parts }] })
@@ -382,6 +382,7 @@
             const [view, setView] = useState('home');
             const [user, setUser] = useState(null);
             const [apiStatus, setApiStatus] = useState(GEMINI_API_KEY ? 'active' : 'error');
+            const [lastUpdated, setLastUpdated] = useState('');
             const [stats, setStats] = useState([]);
             const [schedules, setSchedules] = useState([]);
             const [adAccounts, setAdAccounts] = useState([]);
@@ -396,6 +397,13 @@
             useEffect(() => {
                 signInAnonymously(auth);
                 onAuthStateChanged(auth, u => setUser(u));
+
+                try {
+                    const modDate = new Date(document.lastModified);
+                    setLastUpdated(modDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }));
+                } catch (e) {
+                    setLastUpdated('Recently');
+                }
             }, []);
 
             useEffect(() => {
@@ -445,9 +453,10 @@
                             <div className="flex items-center gap-3 cursor-pointer mb-4 md:mb-0" onClick={() => setView('home')}>
                                 <div className="bg-white text-blue-900 p-2 rounded-lg font-black italic shadow-inner tracking-tighter">SW</div>
                                 <div className="leading-none">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 mb-1">
                                         <span className="text-3xl font-black italic uppercase tracking-tighter block">SportzWire</span>
                                         <div title={apiStatus === 'active' ? "AI API Active" : "AI API Missing or Error"} className={`w-3 h-3 rounded-full ${apiStatus === 'active' ? 'bg-green-400 shadow-[0_0_8px_#4ade80]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`}></div>
+                                        {lastUpdated && <span className="text-[9px] text-blue-300 font-bold uppercase tracking-widest bg-blue-800 px-2 py-0.5 rounded-full ml-1 whitespace-nowrap hidden sm:inline-block">Upd: {lastUpdated}</span>}
                                     </div>
                                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] ml-0.5">District 2 Hub</span>
                                 </div>
