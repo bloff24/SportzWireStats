@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SportzWire | District 2 Stats Hub</title>
-    <!-- React & Babel for Browser Rendering -->
+    <!-- React & Babel for Browser Execution -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Tailwind for Styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for Icons -->
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <script type="module">
@@ -18,21 +18,20 @@
         import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // Push SDK to window so Babel script can see it
+        // This makes Firebase accessible to the React script below
         window.FirebaseSDK = { initializeApp, getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc };
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .tab-active { border-bottom: 4px solid #facc15; color: white; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect } = React;
 
         const firebaseConfig = {
             apiKey: "AIzaSyAfVFrewNPM_E1NroIxWAm-E3KaMGtxR_w",
@@ -42,16 +41,6 @@
             messagingSenderId: "935315477435",
             appId: "1:935315477435:web:02d073ddefc1a5472cea9e",
             measurementId: "G-FN8C9ZJ82B"
-        };
-
-        const SPORTS_CATEGORIES = {
-            "Boys Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
-            "Girls Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
-            "Football": ["Passing Yards", "Rushing Yards", "Receiving Yards", "Touchdowns", "Tackles"],
-            "Baseball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
-            "Softball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
-            "Boys Soccer": ["Goals", "Assists", "Saves"],
-            "Girls Soccer": ["Goals", "Assists", "Saves"],
         };
 
         const SCHOOLS = [
@@ -64,12 +53,21 @@
             "Wyoming Area", "Wyoming Valley West"
         ];
 
+        const SPORTS_CATEGORIES = {
+            "Boys Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
+            "Girls Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
+            "Football": ["Passing Yards", "Rushing Yards", "Receiving Yards", "Touchdowns", "Tackles"],
+            "Baseball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
+            "Softball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
+            "Boys Soccer": ["Goals", "Assists", "Saves"],
+            "Girls Soccer": ["Goals", "Assists", "Saves"],
+        };
+
         const SEASONS = ["2025-2026", "2024-2025", "2023-2024", "All-Time"];
 
-        // --- Helper: App Icon ---
         const Icon = ({ name, className = "" }) => <i className={`fa-solid fa-${name} ${className}`}></i>;
 
-        // --- Views ---
+        // --- Sub-Views ---
 
         const Top20View = ({ stats }) => {
             const [sport, setSport] = useState("Boys Basketball");
@@ -77,8 +75,8 @@
 
             return (
                 <div className="p-4 sm:p-8 max-w-7xl mx-auto">
-                    <h2 className="text-3xl font-extrabold text-blue-900 mb-6 uppercase tracking-tight">District 2 Leaderboards</h2>
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-8 flex flex-wrap gap-4">
+                    <h2 className="text-3xl font-extrabold text-blue-900 mb-6 uppercase italic tracking-tighter">Leaderboards</h2>
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-8 flex flex-wrap gap-4">
                         <select className="border p-2 rounded font-bold" value={sport} onChange={e => setSport(e.target.value)}>
                             {Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
@@ -93,18 +91,18 @@
                                 .sort((a,b) => Number(b.value) - Number(a.value))
                                 .slice(0, 20);
                             return (
-                                <div key={cat} className="bg-white p-5 rounded-xl shadow-md border-t-4 border-blue-600">
-                                    <h3 className="font-bold text-lg mb-4 border-b pb-1">{cat}</h3>
-                                    {top.length === 0 ? <p className="text-gray-400 italic text-sm">No entries yet.</p> : (
-                                        <ul className="space-y-2">
+                                <div key={cat} className="bg-white p-5 rounded-xl shadow-md border-t-4 border-blue-600 h-full flex flex-col">
+                                    <h3 className="font-bold text-lg mb-4 border-b pb-1 text-gray-800 uppercase">{cat}</h3>
+                                    {top.length === 0 ? <p className="text-gray-400 italic text-sm py-4">No entries yet.</p> : (
+                                        <ul className="space-y-3 flex-grow">
                                             {top.map((p, i) => (
-                                                <li key={i} className="flex justify-between items-center text-sm">
+                                                <li key={i} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
                                                     <div className="truncate pr-2">
                                                         <span className="font-bold mr-1 text-gray-400">{i+1}.</span>
-                                                        <span className="font-bold text-gray-800">{p.playerName}</span>
-                                                        <p className="text-[10px] text-gray-500 uppercase font-semibold">{p.school}</p>
+                                                        <span className="font-bold text-gray-900">{p.playerName}</span>
+                                                        <p className="text-[10px] text-gray-500 uppercase font-black">{p.school}</p>
                                                     </div>
-                                                    <span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{p.value}</span>
+                                                    <span className="font-black text-blue-700 bg-blue-50 px-2 py-1 rounded shadow-sm">{p.value}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -127,22 +125,22 @@
 
             return (
                 <div className="p-4 sm:p-8 max-w-6xl mx-auto">
-                    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-black text-gray-400 uppercase mb-1">Select School</label>
-                            <select className="w-full border p-2 rounded font-bold" value={school} onChange={e => setSchool(e.target.value)}>
+                            <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">School</label>
+                            <select className="w-full border p-2 rounded-lg font-bold" value={school} onChange={e => setSchool(e.target.value)}>
                                 {SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-black text-gray-400 uppercase mb-1">Select Sport</label>
-                            <select className="w-full border p-2 rounded font-bold" value={sport} onChange={e => setSport(e.target.value)}>
+                            <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Sport</label>
+                            <select className="w-full border p-2 rounded-lg font-bold" value={sport} onChange={e => setSport(e.target.value)}>
                                 {Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-black text-gray-400 uppercase mb-1">Season</label>
-                            <select className="w-full border p-2 rounded font-bold" value={season} onChange={e => setSeason(e.target.value)}>
+                            <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Season</label>
+                            <select className="w-full border p-2 rounded-lg font-bold" value={season} onChange={e => setSeason(e.target.value)}>
                                 {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
@@ -150,20 +148,20 @@
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <section>
-                            <h3 className="text-xl font-black text-blue-900 mb-4 uppercase flex items-center gap-2">
-                                <Icon name="chart-simple" /> Player Statistics
+                            <h3 className="text-xl font-black text-blue-900 mb-4 uppercase italic flex items-center gap-2">
+                                <Icon name="chart-simple" /> Player Stats
                             </h3>
-                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                            <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
                                 <table className="w-full text-left">
-                                    <thead className="bg-gray-50 border-b">
-                                        <tr><th className="p-4 text-xs font-bold uppercase text-gray-500">Player</th><th className="p-4 text-xs font-bold uppercase text-gray-500">Category</th><th className="p-4 text-right text-xs font-bold uppercase text-gray-500">Val</th></tr>
+                                    <thead className="bg-gray-50 border-b text-xs font-black uppercase text-gray-500">
+                                        <tr><th className="p-4">Player</th><th className="p-4">Category</th><th className="p-4 text-right">Val</th></tr>
                                     </thead>
-                                    <tbody className="divide-y">
-                                        {filteredStats.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-gray-400 italic">No stats found.</td></tr> : 
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filteredStats.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-gray-400 italic">No data found.</td></tr> : 
                                             filteredStats.map(s => (
-                                                <tr key={s.id} className="hover:bg-gray-50">
-                                                    <td className="p-4 font-bold">{s.playerName}</td>
-                                                    <td className="p-4 text-sm text-gray-600">{s.category}</td>
+                                                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="p-4 font-bold text-gray-900">{s.playerName}</td>
+                                                    <td className="p-4 text-sm text-gray-600 font-semibold">{s.category}</td>
                                                     <td className="p-4 text-right font-black text-blue-700">{s.value}</td>
                                                 </tr>
                                             ))
@@ -174,21 +172,21 @@
                         </section>
 
                         <section>
-                            <h3 className="text-xl font-black text-blue-900 mb-4 uppercase flex items-center gap-2">
-                                <Icon name="calendar-days" /> Schedule & Results
+                            <h3 className="text-xl font-black text-blue-900 mb-4 uppercase italic flex items-center gap-2">
+                                <Icon name="calendar-check" /> Schedule
                             </h3>
-                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                            <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
                                 <table className="w-full text-left">
-                                    <thead className="bg-gray-50 border-b">
-                                        <tr><th className="p-4 text-xs font-bold uppercase text-gray-500">Date</th><th className="p-4 text-xs font-bold uppercase text-gray-500">Opponent</th><th className="p-4 text-right text-xs font-bold uppercase text-gray-500">Result</th></tr>
+                                    <thead className="bg-gray-50 border-b text-xs font-black uppercase text-gray-500">
+                                        <tr><th className="p-4">Date</th><th className="p-4">Opponent</th><th className="p-4 text-right">Result</th></tr>
                                     </thead>
-                                    <tbody className="divide-y">
+                                    <tbody className="divide-y divide-gray-100">
                                         {filteredSched.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-gray-400 italic">No games posted.</td></tr> : 
                                             filteredSched.map(g => (
                                                 <tr key={g.id}>
-                                                    <td className="p-4 font-bold text-sm">{g.date}</td>
-                                                    <td className="p-4 text-sm">{g.opponent} <span className="text-[10px] bg-gray-100 px-1 rounded">{g.location}</span></td>
-                                                    <td className="p-4 text-right font-black text-blue-700">{g.result}</td>
+                                                    <td className="p-4 font-bold text-sm text-gray-900">{g.date}</td>
+                                                    <td className="p-4 text-sm font-semibold">{g.opponent} <span className="text-[10px] bg-blue-50 text-blue-700 px-1 rounded ml-1">{g.location}</span></td>
+                                                    <td className="p-4 text-right font-black text-blue-900">{g.result}</td>
                                                 </tr>
                                             ))
                                         }
@@ -197,95 +195,6 @@
                             </div>
                         </section>
                     </div>
-                </div>
-            );
-        };
-
-        const StaffPortal = ({ stats, schedules, rosters, adAccounts, role, userSchool, onSave, onDelete }) => {
-            const [tab, setTab] = useState('stats');
-            const [form, setForm] = useState({ id: '', playerName: '', sport: 'Boys Basketball', category: 'Points', value: '', season: '2025-2026', school: role === 'ad' ? userSchool : SCHOOLS[0] });
-            const [adForm, setAdForm] = useState({ id: '', school: SCHOOLS[0], email: '', password: '', status: 'active' });
-
-            const submitStat = (e) => {
-                e.preventDefault();
-                onSave('stats', form);
-                setForm({...form, id: '', playerName: '', value: ''});
-            };
-
-            const submitAd = (e) => {
-                e.preventDefault();
-                onSave('adAccounts', adForm);
-                setAdForm({ id: '', school: SCHOOLS[0], email: '', password: '', status: 'active' });
-            };
-
-            const filteredStats = role === 'admin' ? stats : stats.filter(s => s.school === userSchool);
-
-            return (
-                <div className="p-4 sm:p-8 max-w-6xl mx-auto">
-                    <div className="flex gap-4 mb-8">
-                        <button onClick={() => setTab('stats')} className={`px-4 py-2 font-bold rounded ${tab === 'stats' ? 'bg-blue-900 text-white' : 'bg-white border'}`}>Stats Manager</button>
-                        {role === 'admin' && <button onClick={() => setTab('ads')} className={`px-4 py-2 font-bold rounded ${tab === 'ads' ? 'bg-blue-900 text-white' : 'bg-white border'}`}>AD Accounts</button>}
-                    </div>
-
-                    {tab === 'stats' && (
-                        <div className="space-y-8">
-                            <form onSubmit={submitStat} className="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <input className="border p-2 rounded font-semibold" placeholder="Player Name" value={form.playerName} onChange={e => setForm({...form, playerName: e.target.value})} required />
-                                <select className="border p-2 rounded font-semibold" value={form.sport} onChange={e => setForm({...form, sport: e.target.value})}>
-                                    {Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <input className="border p-2 rounded font-semibold" type="number" placeholder="Value" value={form.value} onChange={e => setForm({...form, value: e.target.value})} required />
-                                <button className="bg-blue-600 text-white font-black uppercase rounded py-2">Publish</button>
-                            </form>
-                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-gray-50 border-b">
-                                        <tr><th className="p-4">Player</th><th className="p-4">Sport</th><th className="p-4">Cat</th><th className="p-4">Val</th><th className="p-4"></th></tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {filteredStats.map(s => (
-                                            <tr key={s.id} className="hover:bg-gray-50">
-                                                <td className="p-4 font-bold">{s.playerName}</td>
-                                                <td className="p-4 text-xs uppercase font-black text-gray-400">{s.sport}</td>
-                                                <td className="p-4">{s.category}</td>
-                                                <td className="p-4 font-black">{s.value}</td>
-                                                <td className="p-4 text-right"><button onClick={() => onDelete('stats', s.id)} className="text-red-600 font-bold"><Icon name="trash-can" /></button></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {tab === 'ads' && role === 'admin' && (
-                        <div className="space-y-8">
-                            <form onSubmit={submitAd} className="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <select className="border p-2 rounded" value={adForm.school} onChange={e => setAdForm({...adForm, school: e.target.value})}>{SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}</select>
-                                <input className="border p-2 rounded" placeholder="AD Email" value={adForm.email} onChange={e => setAdForm({...adForm, email: e.target.value})} required />
-                                <div className="flex gap-2">
-                                    <input className="border p-2 rounded flex-1" placeholder="Password" value={adForm.password} onChange={e => setAdForm({...adForm, password: e.target.value})} required />
-                                    <button type="button" onClick={() => setAdForm({...adForm, password: Math.random().toString(36).slice(-8)})} className="bg-gray-200 px-3 rounded font-bold">Gen</button>
-                                </div>
-                                <button className="md:col-span-3 bg-blue-900 text-white font-black uppercase py-2 rounded">Create Account</button>
-                            </form>
-                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-gray-50 border-b"><tr><th className="p-4">School</th><th className="p-4">Email</th><th className="p-4">Password</th><th className="p-4">Status</th></tr></thead>
-                                    <tbody className="divide-y">
-                                        {adAccounts.map(a => (
-                                            <tr key={a.id}>
-                                                <td className="p-4 font-black text-blue-900">{a.school}</td>
-                                                <td className="p-4 text-blue-600 font-bold underline">{a.email}</td>
-                                                <td className="p-4 font-mono">{a.password}</td>
-                                                <td className="p-4"><span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-black uppercase">{a.status}</span></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };
@@ -298,14 +207,15 @@
 
             const handleAI = async () => {
                 setLoading(true);
-                const apiKey = ""; // Insert your key here!
-                const prompt = `Extract player names and their stats for ${sport}. Return ONLY a JSON array of objects with playerName and stats object. Use these categories if found: ${SPORTS_CATEGORIES[sport].join(', ')}. Data: ${text}`;
+                const apiKey = ""; // <--- INSERT GEMINI KEY HERE
+                const cats = SPORTS_CATEGORIES[sport].join(', ');
+                const prompt = `Extract player names and their stats for ${sport} from this data. Map them to these exact categories: ${cats}. Return ONLY a JSON array of objects with playerName and stats object. Example: [{"playerName": "Smith", "stats": {"Points": 15}}]`;
                 
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        body: JSON.stringify({ contents: [{ parts: [{ text: `Raw Data: ${text}\n\nTask: ${prompt}` }] }] })
                     });
                     const data = await res.json();
                     const clean = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
@@ -317,43 +227,116 @@
                         });
                     });
                     setExtracted(flat);
-                } catch (e) { alert("AI Processing failed. Check your API key."); }
+                } catch (e) { alert("AI Sync Failed. Please verify your API Key."); }
                 setLoading(false);
             };
 
             return (
                 <div className="p-4 sm:p-8 max-w-4xl mx-auto">
-                    <h2 className="text-3xl font-extrabold text-blue-900 mb-6 uppercase">AI Smart Import</h2>
-                    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-                        <select className="w-full border p-3 rounded mb-4 font-bold" value={sport} onChange={e => setSport(e.target.value)}>{Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}</select>
-                        <textarea className="w-full border p-4 rounded min-h-[250px] mb-4 text-sm" placeholder="Paste box score or season recap here..." value={text} onChange={e => setText(e.target.value)} />
-                        <button onClick={handleAI} disabled={loading || !text} className="w-full bg-blue-900 text-white font-black py-4 rounded uppercase tracking-widest disabled:opacity-50">
-                            {loading ? <Icon name="spinner" className="animate-spin mr-2"/> : <Icon name="wand-magic-sparkles" className="mr-2"/>}
-                            Analyze with SportzWire AI
+                    <h2 className="text-3xl font-extrabold text-blue-900 mb-6 uppercase italic">AI Smart Import</h2>
+                    <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-2">Select Sport Target</label>
+                        <select className="w-full border p-3 rounded-lg mb-4 font-bold" value={sport} onChange={e => setSport(e.target.value)}>{Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}</select>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-2">Paste Game Summary or Box Score</label>
+                        <textarea className="w-full border p-4 rounded-lg min-h-[250px] mb-4 text-sm font-medium" placeholder="E.g. Johnson led Scranton with 24 points..." value={text} onChange={e => setText(e.target.value)} />
+                        <button onClick={handleAI} disabled={loading || !text} className="w-full bg-blue-900 text-white font-black py-4 rounded-xl uppercase tracking-widest disabled:opacity-50 hover:bg-blue-800 shadow-lg">
+                            {loading ? <Icon name="circle-notch" className="animate-spin mr-2"/> : <Icon name="wand-sparkles" className="mr-2"/>}
+                            Clean & Match with AI
                         </button>
                     </div>
 
                     {extracted && (
-                        <div className="mt-8 bg-white p-6 rounded-xl shadow-md border-t-8 border-green-500">
-                            <h3 className="font-black text-lg mb-4">Review Extracted Records ({extracted.length})</h3>
-                            <div className="max-h-[300px] overflow-y-auto mb-6 border rounded p-2">
-                                {extracted.map((e, i) => <div key={i} className="text-sm py-1 border-b last:border-0">{e.playerName}: <b>{e.value}</b> {e.category}</div>)}
+                        <div className="mt-8 bg-white p-6 rounded-2xl shadow-2xl border-t-8 border-green-500">
+                            <h3 className="font-black text-lg mb-4 uppercase text-gray-800">Review {extracted.length} Extracted Entries</h3>
+                            <div className="max-h-[300px] overflow-y-auto mb-6 border rounded-lg p-2 bg-gray-50">
+                                {extracted.map((e, i) => <div key={i} className="text-sm py-2 border-b last:border-0 font-bold">{e.playerName}: <span className="text-blue-600">{e.value}</span> {e.category}</div>)}
                             </div>
-                            <button onClick={() => {onBatch(extracted); setExtracted(null); setText('');}} className="w-full bg-green-600 text-white font-black py-4 rounded uppercase">Commit to District 2 Database</button>
+                            <button onClick={() => {onBatch(extracted); setExtracted(null); setText('');}} className="w-full bg-green-600 text-white font-black py-4 rounded-xl uppercase shadow-lg hover:bg-green-700">Commit to SportzWire Database</button>
                         </div>
                     )}
                 </div>
             );
         };
 
-        // --- Auth & Main ---
+        const PortalView = ({ stats, schedules, adAccounts, role, userSchool, onSave, onDelete }) => {
+            const [tab, setTab] = useState('stats');
+            const [f, setF] = useState({ id: '', playerName: '', sport: 'Boys Basketball', category: 'Points', value: '', season: '2025-2026', school: role === 'ad' ? userSchool : SCHOOLS[0] });
+            const [af, setAF] = useState({ id: '', school: SCHOOLS[0], email: '', password: '', status: 'active' });
+
+            const sStat = (e) => { e.preventDefault(); onSave('stats', f); setF({...f, id: '', playerName: '', value: ''}); };
+            const sAd = (e) => { e.preventDefault(); onSave('adAccounts', af); setAF({ id: '', school: SCHOOLS[0], email: '', password: '', status: 'active' }); };
+            const filtered = role === 'admin' ? stats : stats.filter(s => s.school === userSchool);
+
+            return (
+                <div className="p-4 sm:p-8 max-w-6xl mx-auto">
+                    <h2 className="text-3xl font-black text-blue-900 mb-8 uppercase italic">Portal: {role === 'admin' ? 'Admin' : userSchool}</h2>
+                    <div className="flex gap-4 mb-8">
+                        <button onClick={() => setTab('stats')} className={`px-6 py-2 font-black rounded-lg uppercase text-xs tracking-widest ${tab === 'stats' ? 'bg-blue-900 text-white shadow-lg' : 'bg-white border text-gray-500'}`}>Stats</button>
+                        {role === 'admin' && <button onClick={() => setTab('ads')} className={`px-6 py-2 font-black rounded-lg uppercase text-xs tracking-widest ${tab === 'ads' ? 'bg-blue-900 text-white shadow-lg' : 'bg-white border text-gray-500'}`}>Accounts</button>}
+                    </div>
+
+                    {tab === 'stats' && (
+                        <div className="space-y-6">
+                            <form onSubmit={sStat} className="bg-white p-6 rounded-2xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4 border border-gray-200">
+                                <input className="border p-3 rounded-lg font-bold" placeholder="Player Name" value={f.playerName} onChange={e => setF({...f, playerName: e.target.value})} required />
+                                <select className="border p-3 rounded-lg font-bold" value={f.sport} onChange={e => setF({...f, sport: e.target.value})}>{Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                <input className="border p-3 rounded-lg font-bold" type="number" placeholder="Value" value={f.value} onChange={e => setF({...f, value: e.target.value})} required />
+                                <button className="bg-blue-600 text-white font-black uppercase rounded-lg py-3 hover:bg-blue-700 shadow-md">Add Entry</button>
+                            </form>
+                            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-gray-50 uppercase text-[10px] font-black text-gray-400 border-b">
+                                        <tr><th className="p-4">School</th><th className="p-4">Sport</th><th className="p-4">Player</th><th className="p-4">Val</th><th className="p-4"></th></tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filtered.sort((a,b) => b.value - a.value).map(s => (
+                                            <tr key={s.id}>
+                                                <td className="p-4 text-xs font-black uppercase text-gray-400">{s.school}</td><td className="p-4 text-xs font-black uppercase text-gray-400">{s.sport}</td><td className="p-4 font-bold">{s.playerName}</td><td className="p-4 font-black text-blue-700">{s.value}</td>
+                                                <td className="p-4 text-right"><button onClick={() => onDelete('stats', s.id)} className="text-red-500 hover:text-red-700"><Icon name="trash-can" /></button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'ads' && role === 'admin' && (
+                        <div className="space-y-6">
+                            <form onSubmit={sAd} className="bg-white p-6 rounded-2xl shadow-md grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <select className="border p-3 rounded-lg font-bold" value={af.school} onChange={e => setAF({...af, school: e.target.value})}>{SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                <input className="border p-3 rounded-lg font-bold" type="email" placeholder="Work Email" value={af.email} onChange={e => setAF({...af, email: e.target.value})} required />
+                                <div className="flex gap-2">
+                                    <input className="border p-3 rounded-lg font-bold flex-1" placeholder="Password" value={af.password} onChange={e => setAF({...af, password: e.target.value})} required />
+                                    <button type="button" onClick={() => setAF({...af, password: Math.random().toString(36).slice(-8)})} className="bg-gray-100 px-4 rounded-lg font-black text-xs uppercase">Gen</button>
+                                </div>
+                                <button className="md:col-span-3 bg-blue-900 text-white font-black uppercase py-4 rounded-xl shadow-lg">Save AD Access</button>
+                            </form>
+                            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-gray-50 border-b text-[10px] uppercase font-black text-gray-400"><tr><th className="p-4">School</th><th className="p-4">Email</th><th className="p-4">Status</th></tr></thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {adAccounts.map(a => (
+                                            <tr key={a.id}>
+                                                <td className="p-4 font-black text-blue-900">{a.school}</td><td className="p-4 text-blue-600 font-bold">{a.email}</td><td className="p-4"><span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-black uppercase">{a.status}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- Core Application ---
 
         function App() {
             const [view, setView] = useState('home');
             const [user, setUser] = useState(null);
             const [stats, setStats] = useState([]);
             const [schedules, setSchedules] = useState([]);
-            const [rosters, setRosters] = useState([]);
             const [adAccounts, setAdAccounts] = useState([]);
             const [modal, setModal] = useState(false);
             const [email, setEmail] = useState('');
@@ -370,14 +353,13 @@
 
             useEffect(() => {
                 if (!user) return;
-                const unsub1 = onSnapshot(collection(db, 'stats'), s => setStats(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                const unsub2 = onSnapshot(collection(db, 'schedules'), s => setSchedules(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                const unsub3 = onSnapshot(collection(db, 'rosters'), s => setRosters(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                const unsub4 = onSnapshot(collection(db, 'adAccounts'), s => setAdAccounts(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+                const u1 = onSnapshot(collection(db, 'stats'), s => setStats(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const u2 = onSnapshot(collection(db, 'schedules'), s => setSchedules(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const u3 = onSnapshot(collection(db, 'adAccounts'), s => setAdAccounts(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                return () => { u1(); u2(); u3(); };
             }, [user]);
 
-            const login = async (e) => {
+            const handleLogin = async (e) => {
                 e.preventDefault();
                 try {
                     await signInWithEmailAndPassword(auth, email, pass);
@@ -386,9 +368,7 @@
                     if (email === 'admin@sportzwire.com') {
                         await createUserWithEmailAndPassword(auth, email, pass);
                         setModal(false);
-                    } else {
-                        alert("Invalid login details.");
-                    }
+                    } else { alert("Invalid Portal Credentials."); }
                 }
             };
 
@@ -396,7 +376,7 @@
             const handleDelete = async (col, id) => await deleteDoc(doc(db, col, id));
             const handleBatch = async (arr) => {
                 await Promise.all(arr.map(a => addDoc(collection(db, 'stats'), a)));
-                alert("Stats Synchronized!");
+                alert("Database Updated!");
             };
 
             let role = 'public';
@@ -410,49 +390,49 @@
             }
 
             return (
-                <div className="min-h-screen flex flex-col pb-20 md:pb-0">
-                    <nav className="bg-blue-900 text-white p-4 shadow-xl border-b-4 border-yellow-400">
+                <div className="min-h-screen flex flex-col">
+                    <nav className="bg-blue-900 text-white p-4 shadow-2xl border-b-4 border-blue-600">
                         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
                             <div className="flex items-center gap-3 cursor-pointer mb-4 md:mb-0" onClick={() => setView('home')}>
-                                <div className="bg-yellow-400 p-2 rounded-lg text-blue-900"><Icon name="trophy" size={24} /></div>
+                                <div className="bg-white text-blue-900 p-2 rounded-lg font-black italic shadow-inner tracking-tighter">SW</div>
                                 <div className="leading-none">
-                                    <span className="text-2xl font-black italic uppercase tracking-tighter">SportzWire</span>
-                                    <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">District 2 Stats Hub</p>
+                                    <span className="text-3xl font-black italic uppercase tracking-tighter block">SportzWire</span>
+                                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] ml-0.5">District 2 Hub</span>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-1 md:gap-4 font-black uppercase text-xs">
-                                <button onClick={() => setView('home')} className={`px-3 py-2 rounded ${view === 'home' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}>School Stats</button>
-                                <button onClick={() => setView('top20')} className={`px-3 py-2 rounded ${view === 'top20' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}>Top 20</button>
+                            <div className="flex flex-wrap gap-2 md:gap-4 font-black uppercase text-[10px] tracking-widest items-center">
+                                <button onClick={() => setView('home')} className={`px-3 py-2 rounded-lg ${view === 'home' ? 'bg-blue-800 shadow-inner' : 'hover:text-blue-300'}`}>School Stats</button>
+                                <button onClick={() => setView('top20')} className={`px-3 py-2 rounded-lg ${view === 'top20' ? 'bg-blue-800 shadow-inner' : 'hover:text-blue-300'}`}>Leaderboards</button>
                                 {role !== 'public' && (
                                     <>
-                                        <button onClick={() => setView('import')} className={`px-3 py-2 rounded text-green-400 ${view === 'import' ? 'bg-blue-800' : ''}`}>AI Import</button>
-                                        <button onClick={() => setView('staff')} className={`px-3 py-2 rounded text-blue-300 ${view === 'staff' ? 'bg-blue-800' : ''}`}>Portal</button>
+                                        <button onClick={() => setView('import')} className={`px-3 py-2 rounded-lg text-green-400 ${view === 'import' ? 'bg-blue-800' : ''}`}>AI Import</button>
+                                        <button onClick={() => setView('staff')} className={`px-3 py-2 rounded-lg text-blue-300 ${view === 'staff' ? 'bg-blue-800' : ''}`}>AD Portal</button>
                                     </>
                                 )}
                                 {user && !user.isAnonymous ? 
-                                    <button onClick={() => signOut(auth)} className="bg-red-600 px-4 py-2 rounded shadow-md ml-2">Logout</button> :
-                                    <button onClick={() => setModal(true)} className="bg-yellow-400 text-blue-900 px-4 py-2 rounded shadow-md ml-2">Staff Login</button>
+                                    <button onClick={() => signOut(auth)} className="bg-red-700 px-4 py-2 rounded-lg shadow-lg font-black ml-2">Log Out</button> :
+                                    <button onClick={() => setModal(true)} className="bg-blue-600 px-4 py-2 rounded-lg shadow-lg font-black ml-2 hover:bg-blue-500">Staff Login</button>
                                 }
                             </div>
                         </div>
                     </nav>
 
-                    <main className="flex-grow bg-gray-50">
+                    <main className="flex-grow">
                         {view === 'home' && <SchoolLookupView stats={stats} schedules={schedules} />}
                         {view === 'top20' && <Top20View stats={stats} />}
                         {view === 'import' && <SmartImportView userSchool={school} onBatch={handleBatch} />}
-                        {view === 'staff' && <StaffPortal stats={stats} schedules={schedules} adAccounts={adAccounts} role={role} userSchool={school} onSave={handleSave} onDelete={handleDelete} />}
+                        {view === 'staff' && <PortalView stats={stats} schedules={schedules} adAccounts={adAccounts} role={role} userSchool={school} onSave={handleSave} onDelete={handleDelete} />}
                     </main>
 
                     {modal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[100]">
-                            <div className="bg-white p-8 rounded-2xl max-w-sm w-full shadow-2xl">
-                                <h2 className="text-3xl font-black text-blue-900 mb-6 uppercase tracking-tighter">Portal Access</h2>
-                                <form onSubmit={login} className="space-y-4">
-                                    <input className="w-full border p-3 rounded-lg font-semibold" type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} required />
-                                    <input className="w-full border p-3 rounded-lg font-semibold" type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} required />
-                                    <button className="w-full bg-blue-900 text-white font-black py-4 rounded-lg uppercase tracking-widest hover:bg-blue-800 transition-all">Sign In Securely</button>
-                                    <button type="button" onClick={() => setModal(false)} className="w-full text-gray-400 font-bold uppercase text-xs">Cancel</button>
+                        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-[200]">
+                            <div className="bg-white p-8 rounded-3xl max-w-sm w-full shadow-2xl border-4 border-blue-900">
+                                <h2 className="text-4xl font-black text-blue-900 mb-6 uppercase italic tracking-tighter text-center">Portal</h2>
+                                <form onSubmit={handleLogin} className="space-y-4">
+                                    <input className="w-full border-2 border-gray-200 p-4 rounded-xl font-bold focus:border-blue-500 outline-none" type="email" placeholder="School Email" value={email} onChange={e => setEmail(e.target.value)} required />
+                                    <input className="w-full border-2 border-gray-200 p-4 rounded-xl font-bold focus:border-blue-500 outline-none" type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} required />
+                                    <button className="w-full bg-blue-900 text-white font-black py-5 rounded-2xl uppercase tracking-[0.2em] hover:bg-blue-800 transition-all shadow-xl">Secure Login</button>
+                                    <button type="button" onClick={() => setModal(false)} className="w-full text-gray-400 font-black uppercase text-[10px] tracking-widest mt-4">Close Access</button>
                                 </form>
                             </div>
                         </div>
