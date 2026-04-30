@@ -1,1473 +1,468 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
-import { Trophy, Edit, Trash2, Wand2, UploadCloud, CheckCircle2, RefreshCw, CalendarDays, Users, Key, Mail, Ban, CheckCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportzWire | District 2 Stats Hub</title>
+    <!-- React & Babel for Browser Rendering -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-const fallbackConfig = {
-  apiKey: "AIzaSyAfVFrewNPM_E1NroIxWAm-E3KaMGtxR_w",
-  authDomain: "d2-stats-ab64a.firebaseapp.com",
-  projectId: "d2-stats-ab64a",
-  storageBucket: "d2-stats-ab64a.firebasestorage.app",
-  messagingSenderId: "935315477435",
-  appId: "1:935315477435:web:02d073ddefc1a5472cea9e",
-  measurementId: "G-FN8C9ZJ82B"
-};
+        // Push SDK to window so Babel script can see it
+        window.FirebaseSDK = { initializeApp, getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc };
+    </script>
 
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'sportzwire-district2-stats';
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 4px solid #facc15; color: white; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
 
-const SPORTS_CATEGORIES = {
-  "Boys Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
-  "Girls Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
-  "Football": ["Passing Yards", "Rushing Yards", "Receiving Yards", "Touchdowns", "Tackles"],
-  "Baseball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
-  "Softball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
-  "Boys Soccer": ["Goals", "Assists", "Saves"],
-  "Girls Soccer": ["Goals", "Assists", "Saves"],
-};
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-const SCHOOLS = [
-  "Abington Heights", "Berwick", "Carbondale Area", "Crestwood", "Dallas",
-  "Delaware Valley", "Dunmore", "Greater Nanticoke Area", "Hanover Area", "Hazleton Area",
-  "Holy Cross", "Holy Redeemer", "Honesdale", "Lackawanna Trail", "Lake Lehman",
-  "Lakeland", "Mid Valley", "Montrose", "North Pocono", "Old Forge", "Pittston Area",
-  "Riverside", "Scranton", "Scranton Prep", "Susquehanna", "Tunkhannock", "Valley View",
-  "Wallenpaupack", "West Scranton", "Western Wayne", "Wilkes-Barre Area",
-  "Wyoming Area", "Wyoming Valley West"
-];
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfVFrewNPM_E1NroIxWAm-E3KaMGtxR_w",
+            authDomain: "d2-stats-ab64a.firebaseapp.com",
+            projectId: "d2-stats-ab64a",
+            storageBucket: "d2-stats-ab64a.firebasestorage.app",
+            messagingSenderId: "935315477435",
+            appId: "1:935315477435:web:02d073ddefc1a5472cea9e",
+            measurementId: "G-FN8C9ZJ82B"
+        };
 
-const SEASONS = ["2025-2026", "2024-2025", "2023-2024", "All-Time"];
+        const SPORTS_CATEGORIES = {
+            "Boys Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
+            "Girls Basketball": ["Points", "Rebounds", "Assists", "Steals", "Field Goals", "Free Throws Made", "Free Throws Attempted", "3 Pointers"],
+            "Football": ["Passing Yards", "Rushing Yards", "Receiving Yards", "Touchdowns", "Tackles"],
+            "Baseball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
+            "Softball": ["Hits", "Home Runs", "RBIs", "Strikeouts (Pitching)"],
+            "Boys Soccer": ["Goals", "Assists", "Saves"],
+            "Girls Soccer": ["Goals", "Assists", "Saves"],
+        };
 
-const Top20View = ({ stats, sportsCategories }) => {
-  const [selectedSport, setSelectedSport] = useState("Boys Basketball");
-  const [selectedSeason, setSelectedSeason] = useState("2025-2026");
-  const categories = sportsCategories[selectedSport] || [];
+        const SCHOOLS = [
+            "Abington Heights", "Berwick", "Carbondale Area", "Crestwood", "Dallas",
+            "Delaware Valley", "Dunmore", "Greater Nanticoke Area", "Hanover Area", "Hazleton Area",
+            "Holy Cross", "Holy Redeemer", "Honesdale", "Lackawanna Trail", "Lake Lehman",
+            "Lakeland", "Mid Valley", "Montrose", "North Pocono", "Old Forge", "Pittston Area",
+            "Riverside", "Scranton", "Scranton Prep", "Susquehanna", "Tunkhannock", "Valley View",
+            "Wallenpaupack", "West Scranton", "Western Wayne", "Wilkes-Barre Area",
+            "Wyoming Area", "Wyoming Valley West"
+        ];
 
-  return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-6 text-blue-900 uppercase tracking-tight">District 2 Top 20 Leaderboards</h2>
-        <div className="mb-8 flex flex-wrap gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-200 inline-block">
-          <div className="flex items-center">
-            <label className="font-semibold mr-3 text-gray-700">Select Sport:</label>
-            <select
-              className="border-gray-300 border p-2 rounded-md font-medium text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedSport}
-              onChange={(e) => setSelectedSport(e.target.value)}
-            >
-              {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex items-center">
-            <label className="font-semibold mr-3 text-gray-700">Season:</label>
-            <select
-              className="border-gray-300 border p-2 rounded-md font-medium text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedSeason}
-              onChange={(e) => setSelectedSeason(e.target.value)}
-            >
-              {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
+        const SEASONS = ["2025-2026", "2024-2025", "2023-2024", "All-Time"];
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map(category => {
-            const topPlayers = stats
-              .filter(s => s.sport === selectedSport && s.category === category && (selectedSeason === "All-Time" || s.season === selectedSeason))
-              .sort((a, b) => Number(b.value) - Number(a.value))
-              .slice(0, 20);
+        // --- Helper: App Icon ---
+        const Icon = ({ name, className = "" }) => <i className={`fa-solid fa-${name} ${className}`}></i>;
+
+        // --- Views ---
+
+        const Top20View = ({ stats }) => {
+            const [sport, setSport] = useState("Boys Basketball");
+            const [season, setSeason] = useState("2025-2026");
 
             return (
-              <div key={category} className="bg-white p-5 rounded-xl shadow-md border-t-4 border-blue-600 flex flex-col h-full">
-                <h3 className="text-xl font-bold mb-4 border-b pb-2 text-gray-800">{category}</h3>
-                {topPlayers.length === 0 ? (
-                  <p className="text-gray-500 text-sm italic py-4">No stats recorded yet.</p>
-                ) : (
-                  <ul className="space-y-3 flex-grow">
-                    {topPlayers.map((player, idx) => (
-                      <li key={player.id} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0">
-                        <div className="flex items-center w-3/4">
-                          <span className="font-bold text-gray-400 w-6">{idx + 1}. </span>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-gray-900 truncate">{player.playerName}</span>
-                            <span className="text-gray-500 text-xs truncate">{player.school} {player.season && selectedSeason === 'All-Time' ? `(${player.season})` : ''}</span>
-                          </div>
-                        </div>
-                        <span className="font-extrabold text-blue-700 bg-blue-50 px-2 py-1 rounded">{player.value}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SchoolLookupView = ({ stats, schools, sportsCategories }) => {
-  const [selectedSchool, setSelectedSchool] = useState(schools[0]);
-  const [selectedSport, setSelectedSport] = useState("Boys Basketball");
-  const [selectedSeason, setSelectedSeason] = useState("2025-2026");
-
-  const filteredStats = stats.filter(s => s.school === selectedSchool && s.sport === selectedSport && (selectedSeason === "All-Time" || s.season === selectedSeason));
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-6 text-blue-900 uppercase tracking-tight">{selectedSchool} Athletics</h2>
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2">School</label>
-            <select className="border border-gray-300 p-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}>
-              {schools.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Sport</label>
-            <select className="border border-gray-300 p-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={selectedSport} onChange={e => setSelectedSport(e.target.value)}>
-              {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Season</label>
-            <select className="border border-gray-300 p-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={selectedSeason} onChange={e => setSelectedSeason(e.target.value)}>
-              {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-blue-900 text-white">
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider w-1/3">Player Name</th>
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider w-1/3">Category</th>
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider w-1/4">Season</th>
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider text-right w-1/4">Value</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredStats.length === 0 ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-gray-500 italic">No stats found for this team currently.</td></tr>
-                ) : (
-                  filteredStats.sort((a,b) => a.category.localeCompare(b.category) || b.value - a.value).map(stat => (
-                    <tr key={stat.id} className="hover:bg-blue-50 transition-colors">
-                      <td className="p-4 font-semibold text-gray-900">{stat.playerName}</td>
-                      <td className="p-4 text-gray-600">{stat.category}</td>
-                      <td className="p-4 text-gray-500 text-sm">{stat.season || 'N/A'}</td>
-                      <td className="p-4 font-extrabold text-blue-700 text-right">{stat.value}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ScheduleView = ({ schedules, schools, sportsCategories }) => {
-  const [selectedSchool, setSelectedSchool] = useState(schools[0]);
-  const [selectedSport, setSelectedSport] = useState("Boys Basketball");
-  const [selectedSeason, setSelectedSeason] = useState("2025-2026");
-
-  const filteredSchedules = schedules.filter(s => s.school === selectedSchool && s.sport === selectedSport && (selectedSeason === "All-Time" || s.season === selectedSeason));
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-6 text-blue-900 uppercase tracking-tight">{selectedSchool} Schedules & Results</h2>
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2">School</label>
-            <select className="border border-gray-300 p-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}>
-              {schools.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Sport</label>
-            <select className="border border-gray-300 p-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={selectedSport} onChange={e => setSelectedSport(e.target.value)}>
-              {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Season</label>
-            <select className="border border-gray-300 p-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={selectedSeason} onChange={e => setSelectedSeason(e.target.value)}>
-              {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-blue-900 text-white">
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider w-1/4">Date</th>
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider w-1/4">Opponent</th>
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider w-1/4">Location</th>
-                  <th className="p-4 font-bold uppercase text-sm tracking-wider text-right w-1/4">Time / Result</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredSchedules.length === 0 ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-gray-500 italic">No schedule posted for this team currently.</td></tr>
-                ) : (
-                  filteredSchedules.sort((a,b) => new Date(a.date) - new Date(b.date)).map(game => (
-                    <tr key={game.id} className="hover:bg-blue-50 transition-colors">
-                      <td className="p-4 font-semibold text-gray-900">{game.date}</td>
-                      <td className="p-4 text-gray-800 font-medium">{game.opponent}</td>
-                      <td className="p-4 text-gray-600">{game.location}</td>
-                      <td className="p-4 font-extrabold text-blue-700 text-right">{game.result}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ManageDataView = ({ stats, schedules, rosters, adAccounts, role, userSchool, schools, sportsCategories, onSaveStat, onDeleteStat, onSaveSchedule, onDeleteSchedule, onSaveRoster, onDeleteRoster, onSaveAdAccount, onDeleteAdAccount }) => {
-  const [activeTab, setActiveTab] = useState('stats');
-
-  const [statData, setStatData] = useState({ id: '', school: role === 'ad' ? userSchool : schools[0], sport: 'Boys Basketball', category: sportsCategories['Boys Basketball'][0], season: '2025-2026', playerName: '', value: '' });
-  const [scheduleData, setScheduleData] = useState({ id: '', school: role === 'ad' ? userSchool : schools[0], sport: 'Boys Basketball', season: '2025-2026', date: '', opponent: '', location: 'Home', result: '' });
-  const [rosterData, setRosterData] = useState({ id: '', school: role === 'ad' ? userSchool : schools[0], sport: 'Boys Basketball', season: '2025-2026', playerName: '' });
-  const [adData, setAdData] = useState({ id: '', school: schools[0], email: '', password: '', status: 'active' });
-
-  useEffect(() => {
-    if (statData.sport && !sportsCategories[statData.sport].includes(statData.category)) {
-      setStatData(prev => ({ ...prev, category: sportsCategories[statData.sport][0] }));
-    }
-  }, [statData.sport]);
-
-  useEffect(() => {
-    if (role === 'ad') {
-      setStatData(prev => ({ ...prev, school: userSchool }));
-      setScheduleData(prev => ({ ...prev, school: userSchool }));
-      setRosterData(prev => ({ ...prev, school: userSchool }));
-    }
-  }, [role, userSchool]);
-
-  const handleStatSubmit = (e) => {
-    e.preventDefault();
-    if (!statData.playerName || statData.value === '') return;
-    onSaveStat({ ...statData, value: Number(statData.value) });
-    setStatData({ id: '', school: role === 'ad' ? userSchool : statData.school, sport: statData.sport, category: statData.category, season: statData.season, playerName: '', value: '' });
-  };
-
-  const handleScheduleSubmit = (e) => {
-    e.preventDefault();
-    if (!scheduleData.date || !scheduleData.opponent) return;
-    onSaveSchedule(scheduleData);
-    setScheduleData({ id: '', school: role === 'ad' ? userSchool : scheduleData.school, sport: scheduleData.sport, season: scheduleData.season, date: '', opponent: '', location: 'Home', result: '' });
-  };
-
-  const handleRosterSubmit = (e) => {
-    e.preventDefault();
-    if (!rosterData.playerName) return;
-    onSaveRoster(rosterData);
-    setRosterData({ id: '', school: role === 'ad' ? userSchool : rosterData.school, sport: rosterData.sport, season: rosterData.season, playerName: '' });
-  };
-
-  const handleAdSubmit = (e) => {
-    e.preventDefault();
-    if (!adData.email) return;
-    onSaveAdAccount(adData);
-    setAdData({ id: '', school: schools[0], email: '', password: '', status: 'active' });
-  };
-
-  const generatePassword = () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$';
-    let newPassword = '';
-    for (let i = 0; i < 10; i++) {
-        newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setAdData({...adData, password: newPassword});
-  };
-
-  const handleEditStat = (stat) => {
-    setStatData(stat);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleEditSchedule = (game) => {
-    setScheduleData(game);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleEditRoster = (player) => {
-    setRosterData(player);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleEditAd = (adAcc) => {
-    setAdData(adAcc);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const visibleStats = role === 'admin' ? stats : stats.filter(s => s.school === userSchool);
-  const visibleSchedules = role === 'admin' ? schedules : schedules.filter(s => s.school === userSchool);
-  const visibleRosters = role === 'admin' ? rosters : rosters.filter(s => s.school === userSchool);
-  
-  const filteredRosterOptions = rosters.filter(r => r.school === statData.school && r.sport === statData.sport && r.season === statData.season);
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-8 text-blue-900 uppercase tracking-tight">
-          {role === 'admin' ? 'SportzWire Admin Portal' : `Athletic Director Portal: ${userSchool}`}
-        </h2>
-
-        <div className="flex flex-wrap gap-4 mb-6">
-            <button onClick={() => setActiveTab('stats')} className={`px-6 py-2 rounded-md font-bold transition-colors ${activeTab === 'stats' ? 'bg-blue-900 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'}`}>Manage Player Stats</button>
-            <button onClick={() => setActiveTab('schedules')} className={`px-6 py-2 rounded-md font-bold transition-colors ${activeTab === 'schedules' ? 'bg-blue-900 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'}`}>Manage Schedules</button>
-            <button onClick={() => setActiveTab('rosters')} className={`px-6 py-2 rounded-md font-bold transition-colors ${activeTab === 'rosters' ? 'bg-blue-900 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'}`}>Manage Rosters</button>
-            {role === 'admin' && (
-                <button onClick={() => setActiveTab('ads')} className={`px-6 py-2 rounded-md font-bold transition-colors ${activeTab === 'ads' ? 'bg-blue-900 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'}`}>Manage AD Accounts</button>
-            )}
-        </div>
-        
-        {activeTab === 'stats' && (
-            <>
-                <form onSubmit={handleStatSubmit} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 border-b pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-gray-800">{statData.id ? 'Edit Player Stat' : 'Log New Player Stat'}</h3>
-                </div>
-                
-                {role === 'admin' && (
-                    <div className="col-span-1 md:col-span-2 xl:col-span-4">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">School</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={statData.school} onChange={e => setStatData({...statData, school: e.target.value})}>
-                        {schools.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    </div>
-                )}
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Sport</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={statData.sport} onChange={e => setStatData({...statData, sport: e.target.value})}>
-                    {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={statData.category} onChange={e => setStatData({...statData, category: e.target.value})}>
-                    {(sportsCategories[statData.sport] || []).map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Season</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={statData.season} onChange={e => setStatData({...statData, season: e.target.value})}>
-                    {SEASONS.filter(s => s !== "All-Time").map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1 md:col-span-2 xl:col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Player Full Name</label>
-                    <input type="text" list="roster-suggestions" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={statData.playerName} onChange={e => setStatData({...statData, playerName: e.target.value})} required placeholder="e.g. John Smith" />
-                    <datalist id="roster-suggestions">
-                        {filteredRosterOptions.map(r => <option key={r.id} value={r.playerName} />)}
-                    </datalist>
-                </div>
-                <div className="col-span-1 md:col-span-2 xl:col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Stat Value</label>
-                    <input type="number" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={statData.value} onChange={e => setStatData({...statData, value: e.target.value})} required placeholder="0" />
-                </div>
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 flex justify-end gap-3 mt-4">
-                    {statData.id && (
-                    <button type="button" onClick={() => setStatData({ id: '', school: role === 'ad' ? userSchool : statData.school, sport: statData.sport, category: statData.category, season: statData.season, playerName: '', value: '' })} className="bg-white border border-gray-300 px-6 py-2.5 rounded-md text-gray-700 hover:bg-gray-50 font-semibold transition-colors">Cancel</button>
-                    )}
-                    <button type="submit" className="bg-blue-600 px-6 py-2.5 rounded-md text-white hover:bg-blue-700 font-bold shadow-sm transition-colors">
-                    {statData.id ? 'Save Changes' : 'Publish Stat'}
-                    </button>
-                </div>
-                </form>
-
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                <div className="p-5 bg-gray-50 border-b flex justify-between items-center">
-                    <h3 className="font-bold text-xl text-gray-800">Stats Ledger</h3>
-                    <span className="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{visibleStats.length} Entries Logged</span>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm min-w-[800px]">
-                    <thead>
-                        <tr className="bg-white text-gray-500 uppercase text-xs tracking-wider border-b">
-                        {role === 'admin' && <th className="p-4 font-semibold">School</th>}
-                        <th className="p-4 font-semibold">Sport</th>
-                        <th className="p-4 font-semibold">Player</th>
-                        <th className="p-4 font-semibold">Category</th>
-                        <th className="p-4 font-semibold">Season</th>
-                        <th className="p-4 font-semibold">Value</th>
-                        <th className="p-4 font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {visibleStats.sort((a,b) => a.sport.localeCompare(b.sport) || a.category.localeCompare(b.category)).map(stat => (
-                        <tr key={stat.id} className="hover:bg-blue-50 transition-colors">
-                            {role === 'admin' && <td className="p-4 font-medium text-gray-900">{stat.school}</td>}
-                            <td className="p-4 text-gray-600">{stat.sport}</td>
-                            <td className="p-4 font-bold text-gray-900">{stat.playerName}</td>
-                            <td className="p-4 text-gray-600">{stat.category}</td>
-                            <td className="p-4 text-gray-500">{stat.season || 'N/A'}</td>
-                            <td className="p-4 font-extrabold text-blue-600">{stat.value}</td>
-                            <td className="p-4 text-right">
-                                <button onClick={() => handleEditStat(stat)} className="text-blue-600 hover:text-blue-800 mr-4 font-medium transition-colors"><Edit size={16} className="inline mr-1 mb-0.5"/>Edit</button>
-                                <button onClick={() => onDeleteStat(stat.id)} className="text-red-500 hover:text-red-700 font-medium transition-colors"><Trash2 size={16} className="inline mr-1 mb-0.5"/>Remove</button>
-                            </td>
-                        </tr>
-                        ))}
-                        {visibleStats.length === 0 && (
-                            <tr><td colSpan={role === 'admin' ? 7 : 6} className="p-8 text-center text-gray-500 italic">No entries exist in the ledger yet.</td></tr>
-                        )}
-                    </tbody>
-                    </table>
-                </div>
-                </div>
-            </>
-        )}
-
-        {activeTab === 'schedules' && (
-            <>
-                <form onSubmit={handleScheduleSubmit} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 border-b pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-gray-800">{scheduleData.id ? 'Edit Game' : 'Log New Game'}</h3>
-                </div>
-                
-                {role === 'admin' && (
-                    <div className="col-span-1 md:col-span-2 xl:col-span-4">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">School</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.school} onChange={e => setScheduleData({...scheduleData, school: e.target.value})}>
-                        {schools.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    </div>
-                )}
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Sport</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.sport} onChange={e => setScheduleData({...scheduleData, sport: e.target.value})}>
-                    {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Season</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.season} onChange={e => setScheduleData({...scheduleData, season: e.target.value})}>
-                    {SEASONS.filter(s => s !== "All-Time").map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>
-                    <input type="text" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.date} onChange={e => setScheduleData({...scheduleData, date: e.target.value})} required placeholder="e.g. Oct 12" />
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Opponent</label>
-                    <input type="text" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.opponent} onChange={e => setScheduleData({...scheduleData, opponent: e.target.value})} required placeholder="e.g. Dallas" />
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Location</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.location} onChange={e => setScheduleData({...scheduleData, location: e.target.value})}>
-                        <option value="Home">Home</option>
-                        <option value="Away">Away</option>
-                    </select>
-                </div>
-                 <div className="col-span-1 md:col-span-2 xl:col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Time or Result</label>
-                    <input type="text" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={scheduleData.result} onChange={e => setScheduleData({...scheduleData, result: e.target.value})} placeholder="e.g. 7:00 PM or W 21-14" />
-                </div>
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 flex justify-end gap-3 mt-4">
-                    {scheduleData.id && (
-                    <button type="button" onClick={() => setScheduleData({ id: '', school: role === 'ad' ? userSchool : scheduleData.school, sport: scheduleData.sport, season: scheduleData.season, date: '', opponent: '', location: 'Home', result: '' })} className="bg-white border border-gray-300 px-6 py-2.5 rounded-md text-gray-700 hover:bg-gray-50 font-semibold transition-colors">Cancel</button>
-                    )}
-                    <button type="submit" className="bg-blue-600 px-6 py-2.5 rounded-md text-white hover:bg-blue-700 font-bold shadow-sm transition-colors">
-                    {scheduleData.id ? 'Save Game' : 'Add to Schedule'}
-                    </button>
-                </div>
-                </form>
-
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                <div className="p-5 bg-gray-50 border-b flex justify-between items-center">
-                    <h3 className="font-bold text-xl text-gray-800">Schedule Ledger</h3>
-                    <span className="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{visibleSchedules.length} Games Logged</span>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm min-w-[800px]">
-                    <thead>
-                        <tr className="bg-white text-gray-500 uppercase text-xs tracking-wider border-b">
-                        {role === 'admin' && <th className="p-4 font-semibold">School</th>}
-                        <th className="p-4 font-semibold">Sport</th>
-                        <th className="p-4 font-semibold">Season</th>
-                        <th className="p-4 font-semibold">Date</th>
-                        <th className="p-4 font-semibold">Opponent</th>
-                        <th className="p-4 font-semibold">Location</th>
-                        <th className="p-4 font-semibold">Time/Result</th>
-                        <th className="p-4 font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {visibleSchedules.map(game => (
-                        <tr key={game.id} className="hover:bg-blue-50 transition-colors">
-                            {role === 'admin' && <td className="p-4 font-medium text-gray-900">{game.school}</td>}
-                            <td className="p-4 text-gray-600">{game.sport}</td>
-                            <td className="p-4 text-gray-500">{game.season}</td>
-                            <td className="p-4 font-bold text-gray-900">{game.date}</td>
-                            <td className="p-4 text-gray-800">{game.opponent}</td>
-                            <td className="p-4 text-gray-600">{game.location}</td>
-                            <td className="p-4 font-extrabold text-blue-600">{game.result}</td>
-                            <td className="p-4 text-right">
-                                <button onClick={() => handleEditSchedule(game)} className="text-blue-600 hover:text-blue-800 mr-4 font-medium transition-colors"><Edit size={16} className="inline mr-1 mb-0.5"/>Edit</button>
-                                <button onClick={() => onDeleteSchedule(game.id)} className="text-red-500 hover:text-red-700 font-medium transition-colors"><Trash2 size={16} className="inline mr-1 mb-0.5"/>Remove</button>
-                            </td>
-                        </tr>
-                        ))}
-                        {visibleSchedules.length === 0 && (
-                            <tr><td colSpan={role === 'admin' ? 8 : 7} className="p-8 text-center text-gray-500 italic">No games exist in the schedule yet.</td></tr>
-                        )}
-                    </tbody>
-                    </table>
-                </div>
-                </div>
-            </>
-        )}
-
-        {activeTab === 'rosters' && (
-            <>
-                <form onSubmit={handleRosterSubmit} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 border-b pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-gray-800">{rosterData.id ? 'Edit Roster Entry' : 'Add Player to Roster'}</h3>
-                </div>
-                
-                {role === 'admin' && (
-                    <div className="col-span-1 md:col-span-2 xl:col-span-4">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">School</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={rosterData.school} onChange={e => setRosterData({...rosterData, school: e.target.value})}>
-                        {schools.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    </div>
-                )}
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Sport</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={rosterData.sport} onChange={e => setRosterData({...rosterData, sport: e.target.value})}>
-                    {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Season</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={rosterData.season} onChange={e => setRosterData({...rosterData, season: e.target.value})}>
-                    {SEASONS.filter(s => s !== "All-Time").map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Player Full Name</label>
-                    <input type="text" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={rosterData.playerName} onChange={e => setRosterData({...rosterData, playerName: e.target.value})} required placeholder="e.g. Ava Gazoo" />
-                </div>
-                
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 flex justify-end gap-3 mt-4">
-                    {rosterData.id && (
-                    <button type="button" onClick={() => setRosterData({ id: '', school: role === 'ad' ? userSchool : rosterData.school, sport: rosterData.sport, season: rosterData.season, playerName: '' })} className="bg-white border border-gray-300 px-6 py-2.5 rounded-md text-gray-700 hover:bg-gray-50 font-semibold transition-colors">Cancel</button>
-                    )}
-                    <button type="submit" className="bg-blue-600 px-6 py-2.5 rounded-md text-white hover:bg-blue-700 font-bold shadow-sm transition-colors">
-                    {rosterData.id ? 'Save Changes' : 'Add to Roster'}
-                    </button>
-                </div>
-                </form>
-
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                <div className="p-5 bg-gray-50 border-b flex justify-between items-center">
-                    <h3 className="font-bold text-xl text-gray-800">Team Rosters</h3>
-                    <span className="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{visibleRosters.length} Players Logged</span>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm min-w-[600px]">
-                    <thead>
-                        <tr className="bg-white text-gray-500 uppercase text-xs tracking-wider border-b">
-                        {role === 'admin' && <th className="p-4 font-semibold">School</th>}
-                        <th className="p-4 font-semibold">Sport</th>
-                        <th className="p-4 font-semibold">Season</th>
-                        <th className="p-4 font-semibold">Player Name</th>
-                        <th className="p-4 font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {visibleRosters.sort((a,b) => a.sport.localeCompare(b.sport) || a.playerName.localeCompare(b.playerName)).map(player => (
-                        <tr key={player.id} className="hover:bg-blue-50 transition-colors">
-                            {role === 'admin' && <td className="p-4 font-medium text-gray-900">{player.school}</td>}
-                            <td className="p-4 text-gray-600">{player.sport}</td>
-                            <td className="p-4 text-gray-500">{player.season}</td>
-                            <td className="p-4 font-bold text-gray-900">{player.playerName}</td>
-                            <td className="p-4 text-right">
-                                <button onClick={() => handleEditRoster(player)} className="text-blue-600 hover:text-blue-800 mr-4 font-medium transition-colors"><Edit size={16} className="inline mr-1 mb-0.5"/>Edit</button>
-                                <button onClick={() => onDeleteRoster(player.id)} className="text-red-500 hover:text-red-700 font-medium transition-colors"><Trash2 size={16} className="inline mr-1 mb-0.5"/>Remove</button>
-                            </td>
-                        </tr>
-                        ))}
-                        {visibleRosters.length === 0 && (
-                            <tr><td colSpan={role === 'admin' ? 5 : 4} className="p-8 text-center text-gray-500 italic">No players exist in the roster yet.</td></tr>
-                        )}
-                    </tbody>
-                    </table>
-                </div>
-                </div>
-            </>
-        )}
-
-        {activeTab === 'ads' && role === 'admin' && (
-            <>
-                <form onSubmit={handleAdSubmit} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 border-b pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Users size={20} className="text-blue-600"/> {adData.id ? 'Edit AD Account' : 'Create New AD Account'}</h3>
-                </div>
-                
-                <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Assigned School</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={adData.school} onChange={e => setAdData({...adData, school: e.target.value})}>
-                        {schools.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Work Email Address</label>
-                    <input type="email" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={adData.email} onChange={e => setAdData({...adData, email: e.target.value})} required placeholder="ad@school.edu" />
-                </div>
-                
-                <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
-                    <div className="flex gap-2">
-                        <input type="text" className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50" value={adData.password} onChange={e => setAdData({...adData, password: e.target.value})} required placeholder="Click generate or type..." />
-                        <button type="button" onClick={generatePassword} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded transition-colors flex items-center gap-1 whitespace-nowrap"><Key size={16}/> Generate</button>
-                    </div>
-                </div>
-
-                <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Account Status</label>
-                    <select className="border border-gray-300 p-2.5 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:outline-none" value={adData.status} onChange={e => setAdData({...adData, status: e.target.value})}>
-                        <option value="active">Active - Access Granted</option>
-                        <option value="revoked">Revoked - Access Denied</option>
-                    </select>
-                </div>
-                
-                <div className="col-span-1 md:col-span-2 xl:col-span-4 flex justify-end gap-3 mt-4">
-                    {adData.id && (
-                    <button type="button" onClick={() => setAdData({ id: '', school: schools[0], email: '', password: '', status: 'active' })} className="bg-white border border-gray-300 px-6 py-2.5 rounded-md text-gray-700 hover:bg-gray-50 font-semibold transition-colors">Cancel</button>
-                    )}
-                    <button type="submit" className="bg-blue-600 px-6 py-2.5 rounded-md text-white hover:bg-blue-700 font-bold shadow-sm transition-colors">
-                    {adData.id ? 'Update Account' : 'Save Account'}
-                    </button>
-                </div>
-                </form>
-
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                <div className="p-5 bg-gray-50 border-b flex justify-between items-center">
-                    <h3 className="font-bold text-xl text-gray-800">Directory of AD Accounts</h3>
-                    <span className="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{adAccounts.length} Accounts Found</span>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm min-w-[800px]">
-                    <thead>
-                        <tr className="bg-white text-gray-500 uppercase text-xs tracking-wider border-b">
-                        <th className="p-4 font-semibold">School</th>
-                        <th className="p-4 font-semibold">Email</th>
-                        <th className="p-4 font-semibold">Password</th>
-                        <th className="p-4 font-semibold">Status</th>
-                        <th className="p-4 font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {adAccounts.sort((a,b) => a.school.localeCompare(b.school)).map(acc => (
-                        <tr key={acc.id} className="hover:bg-blue-50 transition-colors">
-                            <td className="p-4 font-bold text-gray-900">{acc.school}</td>
-                            <td className="p-4 text-gray-800">
-                                <a href={`mailto:${acc.email}?subject=SportzWire%20Portal%20Access&body=Hello,%0A%0AHere%20are%20your%20credentials%20for%20the%20SportzWire%20AD%20Portal:%0A%0ASchool:%20${acc.school}%0AEmail:%20${acc.email}%0APassword:%20${acc.password}%0A%0APlease%20keep%20this%20secure.`} className="text-blue-600 hover:underline flex items-center gap-1">
-                                    <Mail size={14} /> {acc.email}
-                                </a>
-                            </td>
-                            <td className="p-4 text-gray-600 font-mono bg-gray-50 rounded px-2 py-1 my-3 inline-block border">{acc.password}</td>
-                            <td className="p-4">
-                                {acc.status === 'active' ? 
-                                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold flex items-center w-max gap-1"><CheckCircle size={12}/> Active</span> : 
-                                    <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-bold flex items-center w-max gap-1"><Ban size={12}/> Revoked</span>
-                                }
-                            </td>
-                            <td className="p-4 text-right">
-                                <button onClick={() => handleEditAd(acc)} className="text-blue-600 hover:text-blue-800 mr-4 font-medium transition-colors"><Edit size={16} className="inline mr-1 mb-0.5"/>Edit</button>
-                                <button onClick={() => onDeleteAdAccount(acc.id)} className="text-red-500 hover:text-red-700 font-medium transition-colors"><Trash2 size={16} className="inline mr-1 mb-0.5"/>Remove</button>
-                            </td>
-                        </tr>
-                        ))}
-                        {adAccounts.length === 0 && (
-                            <tr><td colSpan={5} className="p-8 text-center text-gray-500 italic">No AD accounts have been created yet.</td></tr>
-                        )}
-                    </tbody>
-                    </table>
-                </div>
-                </div>
-            </>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const SmartImportView = ({ role, userSchool, schools, sportsCategories, rosters, onSaveBatchStats, onSaveBatchSchedule, onSaveBatchRoster }) => {
-  const [importType, setImportType] = useState('stats');
-  
-  const [importSchool, setImportSchool] = useState(role === 'ad' ? userSchool : schools[0]);
-  const [importSport, setImportSport] = useState('Boys Basketball');
-  const [importSeason, setImportSeason] = useState('2025-2026');
-  
-  const [inputText, setInputText] = useState('');
-  const [fileBase64, setFileBase64] = useState('');
-  const [fileName, setFileName] = useState('');
-  
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [extractedData, setExtractedData] = useState(null);
-  const [successMsg, setSuccessMsg] = useState('');
-
-  useEffect(() => {
-    if (role === 'ad') setImportSchool(userSchool);
-  }, [role, userSchool]);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1];
-        setFileBase64(base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAIProcess = async () => {
-    if (!inputText && !fileBase64) return;
-    setIsProcessing(true);
-    setSuccessMsg('');
-    setExtractedData(null);
-    
-    const apiKey = "AIzaSyCjhv4xxzzWd29bB0UFWfjittJksCUJg40"; 
-    
-    let prompt = "";
-    let schema = {};
-
-    if (importType === 'stats') {
-        const currentCategories = sportsCategories[importSport] || [];
-        const statProperties = {};
-        currentCategories.forEach(cat => {
-            statProperties[cat] = { type: "NUMBER" };
-        });
-
-        prompt = `You are a sports data extractor. Extract player names and their stats from the provided data. Map the columns in the data to the following exact category names for ${importSport}: ${currentCategories.join(', ')}. Match logical synonyms (e.g. 'Total Points' -> 'Points', '3 Point Goals' -> '3 Pointers'). Ignore data that doesn't fit these categories. Return ONLY a valid JSON array of objects. Example: [{"playerName": "John Doe", "stats": {"Points": 15, "Field Goals": 5}}]. Do not use markdown.`;
-        schema = {
-            type: "ARRAY",
-            items: {
-                type: "OBJECT",
-                properties: {
-                    playerName: { type: "STRING" },
-                    stats: {
-                        type: "OBJECT",
-                        properties: statProperties
-                    }
-                },
-                required: ["playerName", "stats"]
-            }
-        };
-    } else if (importType === 'schedules') {
-        prompt = `You are a sports data extractor. Extract the team schedule from the provided data. Return ONLY a valid JSON array of objects. Keys must be date (string), opponent (string), location (string, either Home or Away), and result (string, score or time). Example: [{"date": "10/12", "opponent": "Dallas", "location": "Home", "result": "W 21-7"}]. Do not use markdown.`;
-        schema = {
-            type: "ARRAY",
-            items: {
-                type: "OBJECT",
-                properties: {
-                    date: { type: "STRING" },
-                    opponent: { type: "STRING" },
-                    location: { type: "STRING" },
-                    result: { type: "STRING" }
-                },
-                required: ["date", "opponent", "location", "result"]
-            }
-        };
-    } else if (importType === 'rosters') {
-        prompt = `You are a sports data extractor. Extract the roster of players from the provided data. Return ONLY a valid JSON array of objects containing the player names. Example: [{"playerName": "John Doe"}, {"playerName": "Jane Smith"}]. Do not use markdown.`;
-        schema = {
-            type: "ARRAY",
-            items: {
-                type: "OBJECT",
-                properties: {
-                    playerName: { type: "STRING" }
-                },
-                required: ["playerName"]
-            }
-        };
-    }
-
-    const payload = {
-      contents: [{ parts: [] }],
-      generationConfig: { 
-          responseMimeType: "application/json",
-          responseSchema: schema
-      }
-    };
-
-    if (inputText) {
-        payload.contents[0].parts.push({ text: `Raw data: ${inputText}` });
-    }
-    if (fileBase64) {
-        payload.contents[0].parts.push({
-            inlineData: { mimeType: "image/jpeg", data: fileBase64 }
-        });
-    }
-    payload.contents[0].parts.push({ text: prompt });
-
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      
-      let extractedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (extractedText) {
-          const parsedData = JSON.parse(extractedText);
-          if (importType === 'stats') {
-              let flatData = [];
-              parsedData.forEach(playerObj => {
-                  if(playerObj.stats) {
-                      Object.entries(playerObj.stats).forEach(([cat, val]) => {
-                          if (val !== null && val !== undefined) {
-                              flatData.push({
-                                  playerName: playerObj.playerName,
-                                  category: cat,
-                                  value: val
-                              });
-                          }
-                      });
-                  }
-              });
-              setExtractedData(flatData);
-          } else {
-              setExtractedData(parsedData);
-          }
-      } else {
-          setExtractedData([]);
-      }
-    } catch (err) {
-      console.error("AI Processing failed:", err);
-      setExtractedData([]);
-    }
-    setIsProcessing(false);
-  };
-
-  const handleCommitData = async () => {
-    if (!extractedData || extractedData.length === 0) return;
-    
-    if (importType === 'stats') {
-        const formattedData = extractedData.map(item => ({
-            school: importSchool,
-            sport: importSport,
-            category: item.category,
-            season: importSeason,
-            playerName: item.playerName,
-            value: Number(item.value)
-        }));
-        
-        const newPlayersToRoster = [];
-        const currentRosterNames = rosters.filter(r => r.school === importSchool && r.sport === importSport && r.season === importSeason).map(r => r.playerName);
-        
-        extractedData.forEach(item => {
-            if (!currentRosterNames.includes(item.playerName) && !newPlayersToRoster.find(p => p.playerName === item.playerName)) {
-                newPlayersToRoster.push({
-                    school: importSchool,
-                    sport: importSport,
-                    season: importSeason,
-                    playerName: item.playerName
-                });
-            }
-        });
-
-        if (newPlayersToRoster.length > 0) {
-            await onSaveBatchRoster(newPlayersToRoster);
-        }
-
-        await onSaveBatchStats(formattedData);
-        setSuccessMsg(`Successfully imported ${formattedData.length} stat records! ${newPlayersToRoster.length > 0 ? `(And automatically added ${newPlayersToRoster.length} new players to the team roster)` : ''}`);
-    } else if (importType === 'schedules') {
-        const formattedData = extractedData.map(item => ({
-            school: importSchool,
-            sport: importSport,
-            season: importSeason,
-            date: item.date,
-            opponent: item.opponent,
-            location: item.location || 'Home',
-            result: item.result || ''
-        }));
-        await onSaveBatchSchedule(formattedData);
-        setSuccessMsg(`Successfully imported ${formattedData.length} games to the schedule!`);
-    } else if (importType === 'rosters') {
-        const currentRosterNames = rosters.filter(r => r.school === importSchool && r.sport === importSport && r.season === importSeason).map(r => r.playerName);
-        
-        const newPlayersToRoster = [];
-        extractedData.forEach(item => {
-            if (!currentRosterNames.includes(item.playerName) && !newPlayersToRoster.find(p => p.playerName === item.playerName)) {
-                newPlayersToRoster.push({
-                    school: importSchool,
-                    sport: importSport,
-                    season: importSeason,
-                    playerName: item.playerName
-                });
-            }
-        });
-
-        if (newPlayersToRoster.length > 0) {
-            await onSaveBatchRoster(newPlayersToRoster);
-            setSuccessMsg(`Successfully imported ${newPlayersToRoster.length} new players to the team roster!`);
-        } else {
-            setSuccessMsg(`All extracted players are already on the team roster.`);
-        }
-    }
-
-    setExtractedData(null);
-    setInputText('');
-    setFileBase64('');
-    setFileName('');
-  };
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-8 text-blue-900 uppercase tracking-tight flex items-center gap-3">
-          <Wand2 className="text-blue-600" size={32} />
-          SportzWire AI Smart Import
-        </h2>
-        
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">1. Select Target Category & Season</h3>
-            
-            <div className="flex flex-wrap gap-4 mb-6">
-                <button onClick={() => {setImportType('stats'); setExtractedData(null);}} className={`px-4 py-2 rounded-md font-bold transition-colors ${importType === 'stats' ? 'bg-blue-100 text-blue-900 border-2 border-blue-500' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}>Import Player Stats</button>
-                <button onClick={() => {setImportType('schedules'); setExtractedData(null);}} className={`px-4 py-2 rounded-md font-bold transition-colors ${importType === 'schedules' ? 'bg-blue-100 text-blue-900 border-2 border-blue-500' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}>Import Team Schedule</button>
-                <button onClick={() => {setImportType('rosters'); setExtractedData(null);}} className={`px-4 py-2 rounded-md font-bold transition-colors ${importType === 'rosters' ? 'bg-blue-100 text-blue-900 border-2 border-blue-500' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}>Import Team Roster</button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-                 {role === 'admin' && (
-                    <div className="col-span-1">
-                        <label className="block text-sm font-bold text-gray-700 mb-1">School</label>
-                        <select className="border border-gray-300 p-2 rounded-md w-full" value={importSchool} onChange={e => setImportSchool(e.target.value)}>
-                            {schools.map(s => <option key={s} value={s}>{s}</option>)}
+                <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+                    <h2 className="text-3xl font-extrabold text-blue-900 mb-6 uppercase tracking-tight">District 2 Leaderboards</h2>
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-8 flex flex-wrap gap-4">
+                        <select className="border p-2 rounded font-bold" value={sport} onChange={e => setSport(e.target.value)}>
+                            {Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <select className="border p-2 rounded font-bold" value={season} onChange={e => setSeason(e.target.value)}>
+                            {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
-                )}
-                <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Sport</label>
-                    <select className="border border-gray-300 p-2 rounded-md w-full" value={importSport} onChange={e => setImportSport(e.target.value)}>
-                        {Object.keys(sportsCategories).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                 <div className="col-span-1">
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Season</label>
-                    <select className="border border-gray-300 p-2 rounded-md w-full" value={importSeason} onChange={e => setImportSeason(e.target.value)}>
-                        {SEASONS.filter(s => s !== "All-Time").map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-            </div>
-
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">2. Provide Data</h3>
-            <p className="text-sm text-gray-600 mb-4">
-                {importType === 'stats' 
-                    ? "Paste text directly from a box score or upload a photo of a stat sheet. SportzWire AI will match names and extract the numbers for you."
-                    : importType === 'schedules' 
-                        ? "Paste a schedule or list of results. SportzWire AI will break it down into individual games."
-                        : "Paste a list of players or upload an image of a roster sheet to auto-populate the team roster."}
-            </p>
-            
-            <div className="space-y-4">
-                <textarea 
-                    className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 min-h-[120px]" 
-                    placeholder={importType === 'stats' ? "Paste stats here... (e.g. 'John Doe led the team with 24 points, followed by Smith with 15.')" : importType === 'schedules' ? "Paste schedule here... (e.g. 'Oct 12 vs Dallas Home W 21-14')" : "Paste roster names here..."}
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                />
-                
-                <div className="flex items-center gap-4">
-                    <span className="font-bold text-gray-500 uppercase text-sm">OR</span>
-                    <label className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 px-4 py-2 rounded-md cursor-pointer transition-colors">
-                        <UploadCloud size={20} className="text-gray-600" />
-                        <span className="text-sm font-semibold text-gray-700">{fileName || "Upload Image"}</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                    </label>
-                </div>
-
-                <button 
-                    onClick={handleAIProcess}
-                    disabled={isProcessing || (!inputText && !fileBase64)}
-                    className="w-full bg-blue-900 text-white font-bold py-3 rounded-md shadow hover:bg-blue-800 disabled:opacity-50 flex justify-center items-center gap-2 mt-4 transition-colors"
-                >
-                    {isProcessing ? <RefreshCw className="animate-spin" size={20} /> : <Wand2 size={20} />}
-                    {isProcessing ? 'SportzWire AI is Analyzing...' : 'Process Data with AI'}
-                </button>
-            </div>
-        </div>
-
-        {extractedData && (
-            <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-500">
-                 <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                    <CheckCircle2 className="text-green-500" /> Review & Commit Data
-                </h3>
-                {extractedData.length === 0 ? (
-                    <p className="text-red-500 font-medium">AI could not confidently find data in the provided text. Try editing the text to be clearer.</p>
-                ) : (
-                    <>
-                        <div className="overflow-x-auto mb-6">
-                            <table className="w-full text-left border-collapse text-sm">
-                                <thead>
-                                    {importType === 'stats' ? (
-                                        <tr className="bg-gray-50 text-gray-600">
-                                            <th className="p-3 border-b">Player Name</th>
-                                            <th className="p-3 border-b">Category</th>
-                                            <th className="p-3 border-b text-right">Value</th>
-                                        </tr>
-                                    ) : importType === 'schedules' ? (
-                                        <tr className="bg-gray-50 text-gray-600">
-                                            <th className="p-3 border-b">Date</th>
-                                            <th className="p-3 border-b">Opponent</th>
-                                            <th className="p-3 border-b">Location</th>
-                                            <th className="p-3 border-b text-right">Result</th>
-                                        </tr>
-                                    ) : (
-                                        <tr className="bg-gray-50 text-gray-600">
-                                            <th className="p-3 border-b">Extracted Player Name</th>
-                                        </tr>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {SPORTS_CATEGORIES[sport].map(cat => {
+                            const top = stats
+                                .filter(s => s.sport === sport && s.category === cat && (season === "All-Time" || s.season === season))
+                                .sort((a,b) => Number(b.value) - Number(a.value))
+                                .slice(0, 20);
+                            return (
+                                <div key={cat} className="bg-white p-5 rounded-xl shadow-md border-t-4 border-blue-600">
+                                    <h3 className="font-bold text-lg mb-4 border-b pb-1">{cat}</h3>
+                                    {top.length === 0 ? <p className="text-gray-400 italic text-sm">No entries yet.</p> : (
+                                        <ul className="space-y-2">
+                                            {top.map((p, i) => (
+                                                <li key={i} className="flex justify-between items-center text-sm">
+                                                    <div className="truncate pr-2">
+                                                        <span className="font-bold mr-1 text-gray-400">{i+1}.</span>
+                                                        <span className="font-bold text-gray-800">{p.playerName}</span>
+                                                        <p className="text-[10px] text-gray-500 uppercase font-semibold">{p.school}</p>
+                                                    </div>
+                                                    <span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{p.value}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     )}
-                                </thead>
-                                <tbody>
-                                    {extractedData.map((item, idx) => (
-                                        <tr key={idx} className="border-b">
-                                            {importType === 'stats' ? (
-                                                <>
-                                                    <td className="p-3 font-semibold">{item.playerName}</td>
-                                                    <td className="p-3 text-gray-600">{item.category}</td>
-                                                    <td className="p-3 text-right font-bold text-blue-600">{item.value}</td>
-                                                </>
-                                            ) : importType === 'schedules' ? (
-                                                <>
-                                                    <td className="p-3 font-semibold">{item.date}</td>
-                                                    <td className="p-3">{item.opponent}</td>
-                                                    <td className="p-3">{item.location}</td>
-                                                    <td className="p-3 text-right font-bold text-blue-600">{item.result}</td>
-                                                </>
-                                            ) : (
-                                                <td className="p-3 font-semibold">{item.playerName}</td>
-                                            )}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const SchoolLookupView = ({ stats, schedules }) => {
+            const [school, setSchool] = useState(SCHOOLS[0]);
+            const [sport, setSport] = useState("Boys Basketball");
+            const [season, setSeason] = useState("2025-2026");
+
+            const filteredStats = stats.filter(s => s.school === school && s.sport === sport && (season === "All-Time" || s.season === season));
+            const filteredSched = schedules.filter(s => s.school === school && s.sport === sport && (season === "All-Time" || s.season === season));
+
+            return (
+                <div className="p-4 sm:p-8 max-w-6xl mx-auto">
+                    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-xs font-black text-gray-400 uppercase mb-1">Select School</label>
+                            <select className="w-full border p-2 rounded font-bold" value={school} onChange={e => setSchool(e.target.value)}>
+                                {SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
                         </div>
-                        <button onClick={handleCommitData} className="w-full bg-green-600 text-white font-bold py-3 rounded-md shadow hover:bg-green-700 transition-colors">
-                            Save {extractedData.length} Records to Ledger
+                        <div>
+                            <label className="block text-xs font-black text-gray-400 uppercase mb-1">Select Sport</label>
+                            <select className="w-full border p-2 rounded font-bold" value={sport} onChange={e => setSport(e.target.value)}>
+                                {Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-black text-gray-400 uppercase mb-1">Season</label>
+                            <select className="w-full border p-2 rounded font-bold" value={season} onChange={e => setSeason(e.target.value)}>
+                                {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <section>
+                            <h3 className="text-xl font-black text-blue-900 mb-4 uppercase flex items-center gap-2">
+                                <Icon name="chart-simple" /> Player Statistics
+                            </h3>
+                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50 border-b">
+                                        <tr><th className="p-4 text-xs font-bold uppercase text-gray-500">Player</th><th className="p-4 text-xs font-bold uppercase text-gray-500">Category</th><th className="p-4 text-right text-xs font-bold uppercase text-gray-500">Val</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {filteredStats.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-gray-400 italic">No stats found.</td></tr> : 
+                                            filteredStats.map(s => (
+                                                <tr key={s.id} className="hover:bg-gray-50">
+                                                    <td className="p-4 font-bold">{s.playerName}</td>
+                                                    <td className="p-4 text-sm text-gray-600">{s.category}</td>
+                                                    <td className="p-4 text-right font-black text-blue-700">{s.value}</td>
+                                                </tr>
+                                            ))
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 className="text-xl font-black text-blue-900 mb-4 uppercase flex items-center gap-2">
+                                <Icon name="calendar-days" /> Schedule & Results
+                            </h3>
+                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50 border-b">
+                                        <tr><th className="p-4 text-xs font-bold uppercase text-gray-500">Date</th><th className="p-4 text-xs font-bold uppercase text-gray-500">Opponent</th><th className="p-4 text-right text-xs font-bold uppercase text-gray-500">Result</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {filteredSched.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-gray-400 italic">No games posted.</td></tr> : 
+                                            filteredSched.map(g => (
+                                                <tr key={g.id}>
+                                                    <td className="p-4 font-bold text-sm">{g.date}</td>
+                                                    <td className="p-4 text-sm">{g.opponent} <span className="text-[10px] bg-gray-100 px-1 rounded">{g.location}</span></td>
+                                                    <td className="p-4 text-right font-black text-blue-700">{g.result}</td>
+                                                </tr>
+                                            ))
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            );
+        };
+
+        const StaffPortal = ({ stats, schedules, rosters, adAccounts, role, userSchool, onSave, onDelete }) => {
+            const [tab, setTab] = useState('stats');
+            const [form, setForm] = useState({ id: '', playerName: '', sport: 'Boys Basketball', category: 'Points', value: '', season: '2025-2026', school: role === 'ad' ? userSchool : SCHOOLS[0] });
+            const [adForm, setAdForm] = useState({ id: '', school: SCHOOLS[0], email: '', password: '', status: 'active' });
+
+            const submitStat = (e) => {
+                e.preventDefault();
+                onSave('stats', form);
+                setForm({...form, id: '', playerName: '', value: ''});
+            };
+
+            const submitAd = (e) => {
+                e.preventDefault();
+                onSave('adAccounts', adForm);
+                setAdForm({ id: '', school: SCHOOLS[0], email: '', password: '', status: 'active' });
+            };
+
+            const filteredStats = role === 'admin' ? stats : stats.filter(s => s.school === userSchool);
+
+            return (
+                <div className="p-4 sm:p-8 max-w-6xl mx-auto">
+                    <div className="flex gap-4 mb-8">
+                        <button onClick={() => setTab('stats')} className={`px-4 py-2 font-bold rounded ${tab === 'stats' ? 'bg-blue-900 text-white' : 'bg-white border'}`}>Stats Manager</button>
+                        {role === 'admin' && <button onClick={() => setTab('ads')} className={`px-4 py-2 font-bold rounded ${tab === 'ads' ? 'bg-blue-900 text-white' : 'bg-white border'}`}>AD Accounts</button>}
+                    </div>
+
+                    {tab === 'stats' && (
+                        <div className="space-y-8">
+                            <form onSubmit={submitStat} className="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <input className="border p-2 rounded font-semibold" placeholder="Player Name" value={form.playerName} onChange={e => setForm({...form, playerName: e.target.value})} required />
+                                <select className="border p-2 rounded font-semibold" value={form.sport} onChange={e => setForm({...form, sport: e.target.value})}>
+                                    {Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <input className="border p-2 rounded font-semibold" type="number" placeholder="Value" value={form.value} onChange={e => setForm({...form, value: e.target.value})} required />
+                                <button className="bg-blue-600 text-white font-black uppercase rounded py-2">Publish</button>
+                            </form>
+                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-gray-50 border-b">
+                                        <tr><th className="p-4">Player</th><th className="p-4">Sport</th><th className="p-4">Cat</th><th className="p-4">Val</th><th className="p-4"></th></tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {filteredStats.map(s => (
+                                            <tr key={s.id} className="hover:bg-gray-50">
+                                                <td className="p-4 font-bold">{s.playerName}</td>
+                                                <td className="p-4 text-xs uppercase font-black text-gray-400">{s.sport}</td>
+                                                <td className="p-4">{s.category}</td>
+                                                <td className="p-4 font-black">{s.value}</td>
+                                                <td className="p-4 text-right"><button onClick={() => onDelete('stats', s.id)} className="text-red-600 font-bold"><Icon name="trash-can" /></button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'ads' && role === 'admin' && (
+                        <div className="space-y-8">
+                            <form onSubmit={submitAd} className="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <select className="border p-2 rounded" value={adForm.school} onChange={e => setAdForm({...adForm, school: e.target.value})}>{SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                <input className="border p-2 rounded" placeholder="AD Email" value={adForm.email} onChange={e => setAdForm({...adForm, email: e.target.value})} required />
+                                <div className="flex gap-2">
+                                    <input className="border p-2 rounded flex-1" placeholder="Password" value={adForm.password} onChange={e => setAdForm({...adForm, password: e.target.value})} required />
+                                    <button type="button" onClick={() => setAdForm({...adForm, password: Math.random().toString(36).slice(-8)})} className="bg-gray-200 px-3 rounded font-bold">Gen</button>
+                                </div>
+                                <button className="md:col-span-3 bg-blue-900 text-white font-black uppercase py-2 rounded">Create Account</button>
+                            </form>
+                            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-gray-50 border-b"><tr><th className="p-4">School</th><th className="p-4">Email</th><th className="p-4">Password</th><th className="p-4">Status</th></tr></thead>
+                                    <tbody className="divide-y">
+                                        {adAccounts.map(a => (
+                                            <tr key={a.id}>
+                                                <td className="p-4 font-black text-blue-900">{a.school}</td>
+                                                <td className="p-4 text-blue-600 font-bold underline">{a.email}</td>
+                                                <td className="p-4 font-mono">{a.password}</td>
+                                                <td className="p-4"><span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-black uppercase">{a.status}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const SmartImportView = ({ userSchool, onBatch }) => {
+            const [text, setText] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [sport, setSport] = useState("Boys Basketball");
+            const [extracted, setExtracted] = useState(null);
+
+            const handleAI = async () => {
+                setLoading(true);
+                const apiKey = ""; // Insert your key here!
+                const prompt = `Extract player names and their stats for ${sport}. Return ONLY a JSON array of objects with playerName and stats object. Use these categories if found: ${SPORTS_CATEGORIES[sport].join(', ')}. Data: ${text}`;
+                
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await res.json();
+                    const clean = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
+                    const parsed = JSON.parse(clean);
+                    let flat = [];
+                    parsed.forEach(p => {
+                        Object.entries(p.stats).forEach(([k, v]) => {
+                            flat.push({ playerName: p.playerName, category: k, value: v, school: userSchool, sport: sport, season: '2025-2026' });
+                        });
+                    });
+                    setExtracted(flat);
+                } catch (e) { alert("AI Processing failed. Check your API key."); }
+                setLoading(false);
+            };
+
+            return (
+                <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+                    <h2 className="text-3xl font-extrabold text-blue-900 mb-6 uppercase">AI Smart Import</h2>
+                    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                        <select className="w-full border p-3 rounded mb-4 font-bold" value={sport} onChange={e => setSport(e.target.value)}>{Object.keys(SPORTS_CATEGORIES).map(s => <option key={s} value={s}>{s}</option>)}</select>
+                        <textarea className="w-full border p-4 rounded min-h-[250px] mb-4 text-sm" placeholder="Paste box score or season recap here..." value={text} onChange={e => setText(e.target.value)} />
+                        <button onClick={handleAI} disabled={loading || !text} className="w-full bg-blue-900 text-white font-black py-4 rounded uppercase tracking-widest disabled:opacity-50">
+                            {loading ? <Icon name="spinner" className="animate-spin mr-2"/> : <Icon name="wand-magic-sparkles" className="mr-2"/>}
+                            Analyze with SportzWire AI
                         </button>
-                    </>
-                )}
-            </div>
-        )}
+                    </div>
 
-        {successMsg && (
-            <div className="bg-green-50 text-green-800 border border-green-200 p-4 rounded-md font-bold text-center mt-4 shadow-sm">
-                {successMsg}
-            </div>
-        )}
-      </div>
-    </div>
-  );
-};
+                    {extracted && (
+                        <div className="mt-8 bg-white p-6 rounded-xl shadow-md border-t-8 border-green-500">
+                            <h3 className="font-black text-lg mb-4">Review Extracted Records ({extracted.length})</h3>
+                            <div className="max-h-[300px] overflow-y-auto mb-6 border rounded p-2">
+                                {extracted.map((e, i) => <div key={i} className="text-sm py-1 border-b last:border-0">{e.playerName}: <b>{e.value}</b> {e.category}</div>)}
+                            </div>
+                            <button onClick={() => {onBatch(extracted); setExtracted(null); setText('');}} className="w-full bg-green-600 text-white font-black py-4 rounded uppercase">Commit to District 2 Database</button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [stats, setStats] = useState([]);
-  const [schedules, setSchedules] = useState([]);
-  const [rosters, setRosters] = useState([]);
-  const [adAccounts, setAdAccounts] = useState([]);
-  const [currentView, setCurrentView] = useState('home'); 
+        // --- Auth & Main ---
 
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
+        function App() {
+            const [view, setView] = useState('home');
+            const [user, setUser] = useState(null);
+            const [stats, setStats] = useState([]);
+            const [schedules, setSchedules] = useState([]);
+            const [rosters, setRosters] = useState([]);
+            const [adAccounts, setAdAccounts] = useState([]);
+            const [modal, setModal] = useState(false);
+            const [email, setEmail] = useState('');
+            const [pass, setPass] = useState('');
 
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+            const { initializeApp, getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc } = window.FirebaseSDK;
+            const db = getFirestore(initializeApp(firebaseConfig));
+            const auth = getAuth();
+
+            useEffect(() => {
+                signInAnonymously(auth);
+                onAuthStateChanged(auth, u => setUser(u));
+            }, []);
+
+            useEffect(() => {
+                if (!user) return;
+                const unsub1 = onSnapshot(collection(db, 'stats'), s => setStats(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const unsub2 = onSnapshot(collection(db, 'schedules'), s => setSchedules(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const unsub3 = onSnapshot(collection(db, 'rosters'), s => setRosters(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const unsub4 = onSnapshot(collection(db, 'adAccounts'), s => setAdAccounts(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+            }, [user]);
+
+            const login = async (e) => {
+                e.preventDefault();
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    setModal(false);
+                } catch (err) {
+                    if (email === 'admin@sportzwire.com') {
+                        await createUserWithEmailAndPassword(auth, email, pass);
+                        setModal(false);
+                    } else {
+                        alert("Invalid login details.");
+                    }
+                }
+            };
+
+            const handleSave = async (col, d) => await addDoc(collection(db, col), d);
+            const handleDelete = async (col, id) => await deleteDoc(doc(db, col, id));
+            const handleBatch = async (arr) => {
+                await Promise.all(arr.map(a => addDoc(collection(db, 'stats'), a)));
+                alert("Stats Synchronized!");
+            };
+
+            let role = 'public';
+            let school = SCHOOLS[0];
+            if (user && !user.isAnonymous) {
+                if (user.email === 'admin@sportzwire.com') role = 'admin';
+                else {
+                    const match = adAccounts.find(a => a.email.toLowerCase() === user.email.toLowerCase());
+                    if (match) { role = 'ad'; school = match.school; }
+                }
+            }
+
+            return (
+                <div className="min-h-screen flex flex-col pb-20 md:pb-0">
+                    <nav className="bg-blue-900 text-white p-4 shadow-xl border-b-4 border-yellow-400">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+                            <div className="flex items-center gap-3 cursor-pointer mb-4 md:mb-0" onClick={() => setView('home')}>
+                                <div className="bg-yellow-400 p-2 rounded-lg text-blue-900"><Icon name="trophy" size={24} /></div>
+                                <div className="leading-none">
+                                    <span className="text-2xl font-black italic uppercase tracking-tighter">SportzWire</span>
+                                    <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">District 2 Stats Hub</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1 md:gap-4 font-black uppercase text-xs">
+                                <button onClick={() => setView('home')} className={`px-3 py-2 rounded ${view === 'home' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}>School Stats</button>
+                                <button onClick={() => setView('top20')} className={`px-3 py-2 rounded ${view === 'top20' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}>Top 20</button>
+                                {role !== 'public' && (
+                                    <>
+                                        <button onClick={() => setView('import')} className={`px-3 py-2 rounded text-green-400 ${view === 'import' ? 'bg-blue-800' : ''}`}>AI Import</button>
+                                        <button onClick={() => setView('staff')} className={`px-3 py-2 rounded text-blue-300 ${view === 'staff' ? 'bg-blue-800' : ''}`}>Portal</button>
+                                    </>
+                                )}
+                                {user && !user.isAnonymous ? 
+                                    <button onClick={() => signOut(auth)} className="bg-red-600 px-4 py-2 rounded shadow-md ml-2">Logout</button> :
+                                    <button onClick={() => setModal(true)} className="bg-yellow-400 text-blue-900 px-4 py-2 rounded shadow-md ml-2">Staff Login</button>
+                                }
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="flex-grow bg-gray-50">
+                        {view === 'home' && <SchoolLookupView stats={stats} schedules={schedules} />}
+                        {view === 'top20' && <Top20View stats={stats} />}
+                        {view === 'import' && <SmartImportView userSchool={school} onBatch={handleBatch} />}
+                        {view === 'staff' && <StaffPortal stats={stats} schedules={schedules} adAccounts={adAccounts} role={role} userSchool={school} onSave={handleSave} onDelete={handleDelete} />}
+                    </main>
+
+                    {modal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[100]">
+                            <div className="bg-white p-8 rounded-2xl max-w-sm w-full shadow-2xl">
+                                <h2 className="text-3xl font-black text-blue-900 mb-6 uppercase tracking-tighter">Portal Access</h2>
+                                <form onSubmit={login} className="space-y-4">
+                                    <input className="w-full border p-3 rounded-lg font-semibold" type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} required />
+                                    <input className="w-full border p-3 rounded-lg font-semibold" type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} required />
+                                    <button className="w-full bg-blue-900 text-white font-black py-4 rounded-lg uppercase tracking-widest hover:bg-blue-800 transition-all">Sign In Securely</button>
+                                    <button type="button" onClick={() => setModal(false)} className="w-full text-gray-400 font-bold uppercase text-xs">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         }
-      } catch (error) {
-        console.error("Authentication failed:", error);
-      }
-    };
-    initAuth();
 
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    const statsRef = collection(db, 'artifacts', appId, 'public', 'data', 'stats');
-    const unsubStats = onSnapshot(statsRef, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStats(data);
-    }, (error) => {
-      console.error("Failed to sync stats ledger:", error);
-    });
-
-    const schedulesRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedules');
-    const unsubSchedules = onSnapshot(schedulesRef, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSchedules(data);
-    }, (error) => {
-      console.error("Failed to sync schedules ledger:", error);
-    });
-
-    const rostersRef = collection(db, 'artifacts', appId, 'public', 'data', 'rosters');
-    const unsubRosters = onSnapshot(rostersRef, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRosters(data);
-    }, (error) => {
-      console.error("Failed to sync rosters ledger:", error);
-    });
-
-    const adAccountsRef = collection(db, 'artifacts', appId, 'public', 'data', 'adAccounts');
-    const unsubAdAccounts = onSnapshot(adAccountsRef, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAdAccounts(data);
-    }, (error) => {
-      console.error("Failed to sync AD Accounts ledger:", error);
-    });
-
-    return () => {
-        unsubStats();
-        unsubSchedules();
-        unsubRosters();
-        unsubAdAccounts();
-    };
-  }, [user]);
-
-  const handleLogin = async (e) => {
-      e.preventDefault();
-      setLoginError('');
-      try {
-          await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-          setLoginModalOpen(false);
-          setLoginEmail('');
-          setLoginPassword('');
-          setCurrentView('home');
-      } catch (err) {
-          let authorizedToCreate = false;
-          
-          if (loginEmail.toLowerCase() === 'admin@sportzwire.com') {
-              authorizedToCreate = true;
-          } else {
-              const adRecord = adAccounts.find(a => a.email.toLowerCase() === loginEmail.toLowerCase() && a.password === loginPassword && a.status === 'active');
-              if (adRecord) authorizedToCreate = true;
-          }
-
-          if (authorizedToCreate) {
-              try {
-                  await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
-                  setLoginModalOpen(false);
-                  setLoginEmail('');
-                  setLoginPassword('');
-                  setCurrentView('home');
-              } catch (createErr) {
-                  setLoginError("Login failed. Check credentials.");
-              }
-          } else {
-              setLoginError("Invalid credentials or account revoked.");
-          }
-      }
-  };
-
-  const handleLogout = async () => {
-      await signOut(auth);
-      await signInAnonymously(auth); 
-      setCurrentView('home');
-  };
-
-  const handleSaveStat = async (statData) => {
-    if (!user || user.isAnonymous) return;
-
-    const isPlayerInRoster = rosters.some(r => r.school === statData.school && r.sport === statData.sport && r.season === statData.season && r.playerName === statData.playerName);
-    if (!isPlayerInRoster) {
-        const rostersRef = collection(db, 'artifacts', appId, 'public', 'data', 'rosters');
-        await addDoc(rostersRef, {
-            school: statData.school,
-            sport: statData.sport,
-            season: statData.season,
-            playerName: statData.playerName
-        });
-    }
-
-    const statsRef = collection(db, 'artifacts', appId, 'public', 'data', 'stats');
-    try {
-      if (statData.id) {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', statData.id);
-        await setDoc(docRef, statData, { merge: true });
-      } else {
-        await addDoc(statsRef, statData);
-      }
-    } catch (err) {
-      console.error("Error updating stats ledger:", err);
-    }
-  };
-
-  const handleSaveSchedule = async (scheduleData) => {
-    if (!user || user.isAnonymous) return;
-    const schedulesRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedules');
-    try {
-      if (scheduleData.id) {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', scheduleData.id);
-        await setDoc(docRef, scheduleData, { merge: true });
-      } else {
-        await addDoc(schedulesRef, scheduleData);
-      }
-    } catch (err) {
-      console.error("Error updating schedules ledger:", err);
-    }
-  };
-
-  const handleSaveRoster = async (rosterData) => {
-    if (!user || user.isAnonymous) return;
-    const rostersRef = collection(db, 'artifacts', appId, 'public', 'data', 'rosters');
-    try {
-      if (rosterData.id) {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'rosters', rosterData.id);
-        await setDoc(docRef, rosterData, { merge: true });
-      } else {
-        await addDoc(rostersRef, rosterData);
-      }
-    } catch (err) {
-      console.error("Error updating roster ledger:", err);
-    }
-  };
-
-  const handleSaveAdAccount = async (accountData) => {
-    if (!user || user.isAnonymous) return;
-    const adAccountsRef = collection(db, 'artifacts', appId, 'public', 'data', 'adAccounts');
-    try {
-      if (accountData.id) {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adAccounts', accountData.id);
-        await setDoc(docRef, accountData, { merge: true });
-      } else {
-        await addDoc(adAccountsRef, accountData);
-      }
-    } catch (err) {
-      console.error("Error updating AD Accounts ledger:", err);
-    }
-  };
-
-  const handleSaveBatchStats = async (statArray) => {
-    if (!user || user.isAnonymous) return;
-    const statsRef = collection(db, 'artifacts', appId, 'public', 'data', 'stats');
-    try {
-        await Promise.all(statArray.map(stat => addDoc(statsRef, stat)));
-    } catch (err) {
-        console.error("Error batch updating stats:", err);
-    }
-  };
-
-  const handleSaveBatchSchedule = async (scheduleArray) => {
-    if (!user || user.isAnonymous) return;
-    const schedulesRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedules');
-    try {
-        await Promise.all(scheduleArray.map(game => addDoc(schedulesRef, game)));
-    } catch (err) {
-        console.error("Error batch updating schedule:", err);
-    }
-  };
-
-  const handleSaveBatchRoster = async (rosterArray) => {
-    if (!user || user.isAnonymous) return;
-    const rostersRef = collection(db, 'artifacts', appId, 'public', 'data', 'rosters');
-    try {
-        await Promise.all(rosterArray.map(player => addDoc(rostersRef, player)));
-    } catch (err) {
-        console.error("Error batch updating rosters:", err);
-    }
-  };
-
-  const handleDeleteStat = async (statId) => {
-    if (!user || user.isAnonymous) return;
-    try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', statId);
-      await deleteDoc(docRef);
-    } catch (err) {
-      console.error("Error removing stat entry:", err);
-    }
-  };
-
-  const handleDeleteSchedule = async (scheduleId) => {
-    if (!user || user.isAnonymous) return;
-    try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', scheduleId);
-      await deleteDoc(docRef);
-    } catch (err) {
-      console.error("Error removing schedule entry:", err);
-    }
-  };
-
-  const handleDeleteRoster = async (rosterId) => {
-    if (!user || user.isAnonymous) return;
-    try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'rosters', rosterId);
-      await deleteDoc(docRef);
-    } catch (err) {
-      console.error("Error removing roster entry:", err);
-    }
-  };
-
-  const handleDeleteAdAccount = async (accountId) => {
-    if (!user || user.isAnonymous) return;
-    try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adAccounts', accountId);
-      await deleteDoc(docRef);
-    } catch (err) {
-      console.error("Error removing AD account:", err);
-    }
-  };
-
-  let derivedRole = 'public';
-  let derivedSchool = SCHOOLS[0];
-
-  if (user && !user.isAnonymous && user.email) {
-      if (user.email.toLowerCase() === 'admin@sportzwire.com') {
-          derivedRole = 'admin';
-      } else {
-          const adMatch = adAccounts.find(a => a.email.toLowerCase() === user.email.toLowerCase());
-          if (adMatch && adMatch.status === 'active') {
-              derivedRole = 'ad';
-              derivedSchool = adMatch.school;
-          }
-      }
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 relative">
-      <nav className="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col xl:flex-row justify-between items-center h-auto py-4 xl:py-2">
-            <div className="flex items-center cursor-pointer mb-4 xl:mb-0" onClick={() => setCurrentView('home')}>
-              <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-400 mr-3" />
-              <div>
-                <span className="block font-extrabold text-2xl tracking-tight leading-none">SportzWire</span>
-                <span className="block text-blue-300 text-xs font-bold uppercase tracking-widest mt-1">District 2 Stats Hub</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4">
-              <button onClick={() => setCurrentView('home')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === 'home' ? 'bg-blue-700 text-white shadow-inner' : 'text-blue-100 hover:bg-blue-800'}`}>School Stats</button>
-              <button onClick={() => setCurrentView('schedule')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === 'schedule' ? 'bg-blue-700 text-white shadow-inner' : 'text-blue-100 hover:bg-blue-800'}`}>Schedules</button>
-              <button onClick={() => setCurrentView('top20')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === 'top20' ? 'bg-blue-700 text-white shadow-inner' : 'text-blue-100 hover:bg-blue-800'}`}>Top 20 Leaderboards</button>
-              
-              {(derivedRole === 'ad' || derivedRole === 'admin') && (
-                  <>
-                    <button onClick={() => setCurrentView('import')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-green-400 text-green-300 hover:bg-green-800 ${currentView === 'import' ? 'bg-green-800 shadow-inner' : ''}`}>
-                      <Wand2 size={16} className="inline mr-1 mb-0.5" /> AI Import
-                    </button>
-                    <button onClick={() => setCurrentView('manage')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-blue-500 ${currentView === 'manage' ? 'bg-blue-700 text-white shadow-inner' : 'text-blue-100 hover:bg-blue-800'}`}>
-                      {derivedRole === 'admin' ? 'Admin Controls' : 'AD Dashboard'}
-                    </button>
-                  </>
-              )}
-
-              <div className="ml-0 sm:ml-4 border-t sm:border-t-0 sm:border-l border-blue-700 pt-4 sm:pt-0 sm:pl-4 flex items-center w-full sm:w-auto justify-center">
-                  {user && !user.isAnonymous ? (
-                      <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-blue-200 hidden sm:inline-block">{user.email}</span>
-                          <button onClick={handleLogout} className="bg-red-700 hover:bg-red-800 text-white px-3 py-1.5 rounded-md text-sm font-bold transition-colors">Sign Out</button>
-                      </div>
-                  ) : (
-                      <button onClick={() => setLoginModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors w-full sm:w-auto">Staff Login</button>
-                  )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="pb-12">
-        {currentView === 'home' && <SchoolLookupView stats={stats} schools={SCHOOLS} sportsCategories={SPORTS_CATEGORIES} />}
-        {currentView === 'schedule' && <ScheduleView schedules={schedules} schools={SCHOOLS} sportsCategories={SPORTS_CATEGORIES} />}
-        {currentView === 'top20' && <Top20View stats={stats} sportsCategories={SPORTS_CATEGORIES} />}
-        {currentView === 'import' && (derivedRole === 'ad' || derivedRole === 'admin') && (
-            <SmartImportView 
-                role={derivedRole} 
-                userSchool={derivedSchool} 
-                schools={SCHOOLS} 
-                sportsCategories={SPORTS_CATEGORIES} 
-                rosters={rosters}
-                onSaveBatchStats={handleSaveBatchStats} 
-                onSaveBatchSchedule={handleSaveBatchSchedule} 
-                onSaveBatchRoster={handleSaveBatchRoster}
-            />
-        )}
-        {currentView === 'manage' && (derivedRole === 'ad' || derivedRole === 'admin') && (
-            <ManageDataView 
-                stats={stats} 
-                schedules={schedules}
-                rosters={rosters}
-                adAccounts={adAccounts}
-                role={derivedRole} 
-                userSchool={derivedSchool} 
-                schools={SCHOOLS} 
-                sportsCategories={SPORTS_CATEGORIES} 
-                onSaveStat={handleSaveStat} 
-                onDeleteStat={handleDeleteStat} 
-                onSaveSchedule={handleSaveSchedule}
-                onDeleteSchedule={handleDeleteSchedule}
-                onSaveRoster={handleSaveRoster}
-                onDeleteRoster={handleDeleteRoster}
-                onSaveAdAccount={handleSaveAdAccount}
-                onDeleteAdAccount={handleDeleteAdAccount}
-            />
-        )}
-      </main>
-
-      {loginModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] p-4">
-            <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full relative">
-                <button onClick={() => setLoginModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 font-bold transition-colors">X</button>
-                <h2 className="text-2xl font-extrabold text-blue-900 mb-6 uppercase tracking-tight text-center">SportzWire Portal Login</h2>
-                
-                {loginError && <p className="text-red-700 text-sm font-bold mb-4 bg-red-50 p-3 border border-red-200 rounded">{loginError}</p>}
-                
-                <form onSubmit={handleLogin} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Email Address</label>
-                        <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="ad@school.edu" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                        <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="Enter password" />
-                    </div>
-                    <button type="submit" className="w-full bg-blue-900 text-white font-bold py-3 rounded-md hover:bg-blue-800 transition-colors shadow-md mt-2 text-lg">Sign In Securely</button>
-                </form>
-            </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
