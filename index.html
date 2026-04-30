@@ -207,7 +207,7 @@
 
             const handleAI = async () => {
                 setLoading(true);
-                const apiKey = ""; // <--- INSERT GEMINI KEY HERE
+                const apiKey = "AIzaSyCjhv4xxzzWd29bB0UFWfjittJksCUJg40"; // <--- INSERT GEMINI KEY HERE
                 const cats = SPORTS_CATEGORIES[sport].join(', ');
                 const prompt = `Extract player names and their stats for ${sport} from this data. Map them to these exact categories: ${cats}. Return ONLY a JSON array of objects with playerName and stats object. Example: [{"playerName": "Smith", "stats": {"Points": 15}}]`;
                 
